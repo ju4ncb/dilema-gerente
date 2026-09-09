@@ -8,15 +8,34 @@ const TOPE = 10;
 // tiempo en una sola operación: más puntos sube, más segundos baja.
 const componer = (puntos, segundos) => puntos * 1_000_000 - segundos;
 
-// Los mismos nombres que acepta Redis.fromEnv(): segun como se aprovisione
-// la base, Vercel inyecta el par UPSTASH_REDIS_REST_* o el par KV_REST_API_*.
-// Si esta condicion fuera mas estricta que la libreria, el escalafon
-// respondería 503 con las credenciales puestas y funcionando.
-const hayRedis = Boolean(
-  (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
-  (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
-);
+// Vercel nombra las credenciales de distinta forma segun como se aprovisione
+// la base —UPSTASH_REDIS_REST_* o KV_REST_API_*— y, si al conectar la tienda
+// se le puso un prefijo, antepone ese prefijo a todo: MITIENDA_UPSTASH_...
+// Redis.fromEnv() solo mira los dos nombres exactos, asi que buscamos por
+// sufijo y armamos el cliente a mano. Un prefijo es la causa mas silenciosa
+// de un escalafon caido: las variables estan puestas y aun asi no se ven.
+const porSufijo = sufijo => {
+  const exacta = process.env[sufijo];
+  if (exacta) return { nombre: sufijo, valor: exacta };
+  const nombre = Object.keys(process.env).find(
+    k => k.endsWith(`_${sufijo}`) && process.env[k]
+  );
+  return nombre ? { nombre, valor: process.env[nombre] } : null;
+};
+
+const urlRest = porSufijo("UPSTASH_REDIS_REST_URL") || porSufijo("KV_REST_API_URL");
+const tokenRest = porSufijo("UPSTASH_REDIS_REST_TOKEN") || porSufijo("KV_REST_API_TOKEN");
+
+const hayRedis = Boolean(urlRest && tokenRest);
 const enVercel = Boolean(process.env.VERCEL);
+
+// Se reportan —solo los nombres, nunca los valores— cuando el escalafon no
+// arranca: sin esto, un 503 no distingue «no conecte nada» de «conecte una
+// tienda que no habla REST», que es el error mas facil de cometer.
+const detectadas = () =>
+  Object.keys(process.env).filter(k =>
+    /(UPSTASH_REDIS|KV_REST_API|KV_URL|REDIS_URL)/.test(k)
+  );
 
 // PIN del botón de la pantalla de inicio. El valor por defecto está en el
 // código —y por tanto en el repositorio— para que el botón funcione sin
@@ -37,7 +56,7 @@ let cliente = null;
 async function redis() {
   if (!cliente) {
     const { Redis } = await import("@upstash/redis");
-    cliente = Redis.fromEnv();
+    cliente = new Redis({ url: urlRest.valor, token: tokenRest.valor });
   }
   return cliente;
 }
@@ -49,8 +68,16 @@ const memoria = [];
 export default async function handler(req, res) {
   try {
     if (!hayRedis && enVercel) {
+      const presentes = detectadas();
       return res.status(503).json({
-        error: "El escalafón no tiene almacenamiento conectado. Instale la integración de Upstash Redis en Vercel."
+        error: "El escalafón no tiene almacenamiento conectado. Instale la integración de Upstash Redis en Vercel.",
+        // Diagnóstico: la tienda «Redis» propia de Vercel solo inyecta
+        // REDIS_URL, que es una conexión TCP y no la API REST que usa
+        // este código. Hay que instalar Upstash Redis desde el Marketplace.
+        variablesDetectadas: presentes,
+        pista: presentes.length
+          ? "Hay variables de Redis, pero ninguna pareja REST (…UPSTASH_REDIS_REST_URL/TOKEN o …KV_REST_API_URL/TOKEN). Instale Upstash Redis desde el Marketplace de Vercel."
+          : "No llegó ninguna variable de Redis a esta función: conecte la tienda al proyecto y vuelva a desplegar."
       });
     }
     if (req.method === "POST") return await guardar(req, res);
@@ -60,7 +87,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   } catch (error) {
     console.error("Fallo en el escalafón:", error);
-    return res.status(500).json({ error: "No se pudo acceder al escalafón" });
+    // El detalle viaja al cliente a proposito: es lo unico que distingue
+    // «token vencido» de «base borrada» sin abrir los logs de Vercel. Los
+    // mensajes de Upstash no incluyen credenciales.
+    return res.status(500).json({
+      error: "No se pudo acceder al escalafón",
+      detalle: String(error?.message ?? error).slice(0, 200)
+    });
   }
 }
 
