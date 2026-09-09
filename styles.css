@@ -1,0 +1,868 @@
+:root {
+  --fondo:      #0E1B2A;
+  --superficie: #17293C;
+  --borde:      #294056;
+  /* Borde de los controles: el anterior daba 1.6:1 contra el relleno y los
+     botones de opción no se leían como botones. Este da 3.4:1. */
+  --borde-control: #56718C;
+  --texto:      #E9EEF3;
+  --tenue:      #93A7BB;
+  --laton:      #C9A227;
+  --plata:      #C6D2DE;
+  --bronce:     #CE9155;
+  /* Verde y rojo aclarados: los originales daban 3.7:1 y 2.7:1 sobre la
+     superficie. Estos dan 5.2:1 y 5.1:1, sobre el 4.5:1 que pide AA. */
+  --aprobado:   #4FA985;
+  --reprobado:  #E8776D;
+  --alerta:     #E8A33D;
+
+  --display: "Bitter", Georgia, serif;
+  --ui: "IBM Plex Sans", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* El `[hidden] { display: none }` del navegador lo gana cualquier regla de
+   clase que fije `display`. Sin este refuerzo, `.destello { display: grid }`
+   dejaba el aviso velando la pagina entera de forma permanente. */
+[hidden] { display: none !important; }
+
+html { background: #0A131E; }
+
+body {
+  color: var(--texto);
+  font-family: var(--ui);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* El fondo va en una capa fija aparte: `background-attachment: fixed` da
+   tirones al desplazar en móvil, un pseudoelemento fijo no. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    /* halo de lámpara sobre el expediente */
+    radial-gradient(55rem 34rem at 50% -8%, rgba(201, 162, 39, 0.11), transparent 62%),
+    /* viñeta que empuja la mirada al centro */
+    radial-gradient(120% 90% at 50% 45%, transparent 38%, rgba(0, 0, 0, 0.5) 100%),
+    /* retícula tenue de plano técnico, acorde al expediente */
+    repeating-linear-gradient(0deg,  rgba(147, 167, 187, 0.045) 0 1px, transparent 1px 52px),
+    repeating-linear-gradient(90deg, rgba(147, 167, 187, 0.045) 0 1px, transparent 1px 52px),
+    linear-gradient(175deg, #122233 0%, #0E1B2A 45%, #091220 100%);
+  transition: opacity 400ms ease;
+}
+
+/* Durante las cinemáticas el fondo se apaga: la escena manda. */
+body[data-vista="video"]::before { opacity: 0.35; }
+
+#escenario {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0.75rem;
+}
+
+body[data-vista="video"] #escenario { padding: 0.5rem; }
+
+/* Utilidad: visible solo para lectores de pantalla. */
+.solo-lector {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── Pantallas ─────────────────────────────────────────── */
+
+.pantalla { display: none; width: 100%; }
+
+/* `margin: auto 0` centra la tarjeta cuando sobra alto y la deja fluir
+   desde arriba cuando no cabe, en vez de recortarla. */
+.pantalla.activa { display: block; margin: auto 0; }
+
+.marco {
+  --pad-x: 1.15rem;
+  --pad-y: 1.5rem;
+
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-top: 3px solid var(--laton);
+  padding: var(--pad-y) var(--pad-x);
+  position: relative;
+  /* Levanta la ficha del fondo en vez de dejarla pegada como una lámina. */
+  box-shadow: 0 28px 60px -34px rgba(0, 0, 0, 0.95),
+              0 1px 0 rgba(233, 238, 243, 0.04) inset;
+}
+
+.marco--ancho { max-width: 46rem; }
+
+/* En la pantalla de caso el filo superior de la tarjeta ES la barra de
+   tiempo. Con el borde de latón puesto quedaban dos líneas doradas: una
+   fija y otra vaciándose, y la fija hacía dudar de la que sí se mueve. */
+.marco--caso { border-top: 0; }
+
+/* ── Tipografía compartida ─────────────────────────────── */
+
+.expediente {
+  font-size: 0.78rem;
+  color: var(--tenue);
+  letter-spacing: 0.01em;
+  margin-bottom: 1.25rem;
+}
+
+.titulo {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(2.1rem, 9vw, 3.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+.titulo:focus-visible,
+.titulo-veredicto:focus-visible,
+.titulo-ranking:focus-visible,
+.enunciado:focus-visible,
+.escena:focus-visible {
+  outline: 2px solid var(--laton);
+  outline-offset: 4px;
+}
+
+.entrada {
+  color: var(--tenue);
+  max-width: 34ch;
+  margin-bottom: 1.75rem;
+}
+
+.rotulo-seccion {
+  font-family: var(--ui);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tenue);
+  margin-bottom: 0.9rem;
+}
+
+/* ── Formulario de inicio ──────────────────────────────── */
+
+.campo { margin-bottom: 1.25rem; }
+
+.campo label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.campo input {
+  width: 100%;
+  background: var(--fondo);
+  border: 1px solid var(--borde-control);
+  color: var(--texto);
+  font-family: var(--ui);
+  /* Nunca por debajo de 16px: iOS hace zoom al enfocar campos más chicos. */
+  font-size: 1.05rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0;
+}
+
+.campo input:focus-visible {
+  outline: 2px solid var(--laton);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.error {
+  color: var(--reprobado);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.aviso-reloj {
+  font-size: 0.85rem;
+  color: var(--tenue);
+  border-left: 2px solid var(--laton);
+  padding-left: 0.85rem;
+  margin-top: 1.5rem;
+}
+
+.nota {
+  font-size: 0.875rem;
+  color: var(--tenue);
+  margin-top: 1.25rem;
+}
+
+.avance-escalafon {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--borde);
+}
+
+/* ── Botones ───────────────────────────────────────────── */
+
+.boton-principal, .boton-secundario {
+  font-family: var(--ui);
+  font-size: 1rem;
+  font-weight: 600;
+  min-height: 3rem;
+  padding: 0.9rem 1.5rem;
+  border: 1px solid var(--laton);
+  cursor: pointer;
+  border-radius: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.boton-principal {
+  background: var(--laton);
+  color: var(--fondo);
+  width: 100%;
+}
+
+.boton-secundario {
+  background: transparent;
+  color: var(--laton);
+}
+
+.boton-principal:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.boton-principal:active:not(:disabled) { background: #B08D1E; }
+.boton-secundario:active { background: rgba(201, 162, 39, 0.22); }
+
+.boton-principal:focus-visible,
+.boton-secundario:focus-visible,
+.boton-escena:focus-visible,
+.boton-reproducir:focus-visible {
+  outline: 2px solid var(--texto);
+  outline-offset: 2px;
+}
+
+/* ── Cinemática ────────────────────────────────────────── */
+
+/* El escenario toma la proporción del video y crece todo lo que pueda
+   dentro de 1280x720 y del 90 % del alto. Fijar la altura en 90dvh a secas
+   dejaba, en un celular vertical, un marco negro enorme con el video
+   pequeñito en el centro. */
+.escena {
+  position: relative;
+  width: min(100%, 1280px, calc(min(90dvh, 720px) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  background: #000;
+  border: 1px solid rgba(201, 162, 39, 0.28);
+  overflow: hidden;
+  box-shadow: 0 40px 90px -40px #000;
+  animation: abrirEscena 520ms cubic-bezier(0.16, 0.84, 0.28, 1) both;
+}
+
+@keyframes abrirEscena {
+  from { transform: scale(0.84); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.escena video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  background: #000;
+}
+
+/* La capa deja pasar los toques al video salvo en los botones. */
+.escena-capa {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0.9rem;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent 24%,
+                                      transparent 66%, rgba(0, 0, 0, 0.72));
+}
+
+.escena-capa > * { pointer-events: auto; }
+
+.escena .pie-video {
+  font-size: 0.82rem;
+  color: rgba(233, 238, 243, 0.9);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  align-self: flex-start;
+}
+
+.escena-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.boton-escena {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.95rem;
+  background: rgba(11, 22, 34, 0.74);
+  border: 1px solid rgba(201, 162, 39, 0.5);
+  color: var(--texto);
+  font-family: var(--ui);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 0;
+  -webkit-tap-highlight-color: transparent;
+  backdrop-filter: blur(6px);
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.boton-escena--omitir { color: var(--laton); }
+.boton-escena:active { background: rgba(201, 162, 39, 0.25); }
+
+/* Bocina dibujada con clip-path: evita depender de un emoji que cada
+   sistema pinta distinto. */
+.icono-sonido {
+  flex: 0 0 auto;
+  width: 0.85rem;
+  height: 0.85rem;
+  background: currentColor;
+  clip-path: polygon(0 34%, 30% 34%, 62% 6%, 62% 94%, 30% 66%, 0 66%);
+}
+
+.boton-escena.silenciado .icono-sonido { opacity: 0.45; }
+
+.boton-reproducir {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: max-content;
+  height: max-content;
+  background: rgba(14, 27, 42, 0.92);
+  border: 1px solid var(--laton);
+  color: var(--laton);
+  font-family: var(--ui);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+}
+
+/* ── Aviso momentáneo ──────────────────────────────────── */
+
+.destello {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(6, 12, 20, 0.74);
+  backdrop-filter: blur(3px);
+  animation: velo 200ms ease both;
+}
+
+.destello-caja {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 8vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: var(--laton);
+  background: var(--superficie);
+  border: 2px solid currentColor;
+  padding: 1rem 1.75rem;
+  box-shadow: 0 30px 70px -30px #000;
+  animation: golpe 520ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+.destello.alerta .destello-caja { color: var(--reprobado); }
+.destello.exito  .destello-caja { color: var(--aprobado); }
+
+/* La cuenta 1-2-3: un solo numero, grande y cuadrado. */
+.destello.cuenta .destello-caja {
+  color: var(--laton);
+  font-size: clamp(3.5rem, 20vw, 7rem);
+  line-height: 1;
+  min-width: clamp(6rem, 32vw, 10rem);
+  padding: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Las frases de animo salen cinco veces por ronda: velo mas liviano y
+   recuadro mas discreto que los avisos que cortan la partida. */
+.destello.aliento {
+  background: rgba(6, 12, 20, 0.42);
+  backdrop-filter: none;
+}
+
+.destello.aliento .destello-caja {
+  color: var(--texto);
+  border-color: var(--laton);
+  font-size: clamp(1.15rem, 5.5vw, 1.7rem);
+  padding: 0.8rem 1.4rem;
+  /* Entrada corta: con los 520 ms del aviso largo, el recuadro pasaba casi
+     media vida traslucido y la frase se leia sobre el texto de atras. */
+  animation-duration: 240ms;
+  animation-timing-function: cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+
+@keyframes velo { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes golpe {
+  from { transform: scale(0.55) rotate(-4deg); opacity: 0; }
+  60%  { transform: scale(1.07) rotate(-1deg); opacity: 1; }
+  to   { transform: scale(1) rotate(-1.5deg); opacity: 1; }
+}
+
+/* ── Caso ──────────────────────────────────────────────── */
+
+/* Con seis opciones largas en un celular, el reloj se iba de pantalla al
+   hacer scroll. La cabecera se queda pegada al borde superior. */
+.cabecera-fija {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--superficie);
+  margin: calc(var(--pad-y) * -1) calc(var(--pad-x) * -1) 1.5rem;
+  padding: 0 var(--pad-x) 0.75rem;
+  /* Separa la cabecera del texto que le pasa por debajo al hacer scroll. */
+  box-shadow: 0 8px 12px -8px rgba(0, 0, 0, 0.65);
+}
+
+.pista-tiempo {
+  height: 3px;
+  background: var(--borde);
+  margin: 0 calc(var(--pad-x) * -1) 0.9rem;
+}
+
+.barra-tiempo {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--laton);
+  transition: width 200ms linear, background-color 300ms ease;
+}
+
+.barra-tiempo.alerta  { background: var(--alerta); }
+.barra-tiempo.critico { background: var(--reprobado); }
+
+.cabecera-caso {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--tenue);
+}
+
+/* min-width:0 deja que la fase se encoja en vez de empujar al reloj
+   fuera de la tarjeta en pantallas angostas. */
+.cabecera-caso__izq { min-width: 0; }
+.cabecera-caso__der { text-align: right; flex: 0 0 auto; }
+
+.contador { font-weight: 500; color: var(--texto); }
+.fase { margin-top: 0.15rem; }
+
+.reloj-caso {
+  font-family: var(--display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--laton);
+}
+
+.reloj-caso.alerta  { color: var(--alerta); }
+.reloj-caso.critico { color: var(--reprobado); animation: latido 1s ease-in-out infinite; }
+
+/* El parpadeo llama la atención sin llegar a borrar el número: bajar más
+   la opacidad vuelve ilegible el dato justo cuando más importa. */
+@keyframes latido {
+  50% { opacity: 0.72; }
+}
+
+.reloj-total {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.3rem;
+}
+
+.barra {
+  height: 2px;
+  background: var(--borde);
+  margin-top: 0.75rem;
+}
+
+.barra-avance {
+  height: 100%;
+  background: var(--laton);
+  width: 0;
+  transition: width 300ms ease;
+}
+
+.enunciado {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: clamp(1.2rem, 4.5vw, 1.7rem);
+  line-height: 1.35;
+  max-width: 44ch;
+  margin-bottom: 1.5rem;
+}
+
+.opciones { list-style: none; display: grid; gap: 0.6rem; }
+
+.opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  width: 100%;
+  /* Objetivo táctil cómodo aun si el texto es de una sola línea. */
+  min-height: 3rem;
+  text-align: left;
+  background: var(--fondo);
+  border: 1px solid var(--borde-control);
+  color: var(--texto);
+  font-family: var(--ui);
+  font-size: 1rem;
+  line-height: 1.45;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  border-radius: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.opcion:focus-visible {
+  outline: 2px solid var(--laton);
+  outline-offset: 1px;
+}
+
+.opcion:active { background: #16273A; }
+
+.opcion[disabled] { cursor: default; opacity: 0.5; }
+
+.opcion.elegida {
+  border-color: var(--laton);
+  background: rgba(201, 162, 39, 0.16);
+  opacity: 1;
+}
+
+.tecla {
+  flex: 0 0 auto;
+  min-width: 1.35rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--laton);
+  font-weight: 600;
+}
+
+.opcion-texto { flex: 1 1 auto; }
+
+.ayuda {
+  font-size: 0.82rem;
+  color: var(--tenue);
+  margin-top: 1.25rem;
+}
+
+/* ── Veredicto ─────────────────────────────────────────── */
+
+/* En un celular el sello flotante tapaba el título: aquí va en el flujo,
+   y solo pasa a estampado cuando hay ancho de sobra. */
+.sello {
+  display: inline-block;
+  border: 4px double currentColor;
+  padding: 0.35rem 1rem;
+  margin-bottom: 1.25rem;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.sello.aprobado  { color: var(--aprobado); }
+.sello.reprobado { color: var(--reprobado); }
+
+.titulo-veredicto, .titulo-ranking {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 6.5vw, 2.6rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  margin-bottom: 1rem;
+}
+
+.dictamen {
+  color: var(--tenue);
+  max-width: 56ch;
+  margin-bottom: 1.75rem;
+}
+
+.cifras {
+  display: grid;
+  /* Tres columnas fijas: con auto-fit la tercera se caía por un pixel de
+     redondeo y las cifras quedaban en 2 + 1, que se lee como un error. */
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--borde);
+  border-bottom: 1px solid var(--borde);
+  margin-bottom: 1.5rem;
+}
+
+.cifra strong {
+  display: block;
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 7vw, 2.1rem);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.cifra span { font-size: 0.8rem; color: var(--tenue); }
+
+.desglose { margin-bottom: 1.75rem; }
+
+.desglose summary {
+  cursor: pointer;
+  color: var(--laton);
+  font-size: 0.95rem;
+  font-weight: 500;
+  /* Objetivo táctil: un `summary` de una línea es difícil de acertar. */
+  padding: 0.75rem 0;
+}
+
+.desglose ol {
+  list-style: none;
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.desglose li {
+  border-left: 2px solid var(--borde-control);
+  padding-left: 0.9rem;
+  font-size: 0.9rem;
+}
+
+.desglose li.acierto { border-left-color: var(--aprobado); }
+.desglose li.fallo   { border-left-color: var(--alerta); }
+
+.desglose-rotulo {
+  color: var(--tenue);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.3rem;
+}
+
+/* El enunciado faltaba por completo: sin la pregunta, el desglose no se
+   puede discutir en grupo. */
+.desglose-pregunta {
+  color: var(--texto);
+  font-family: var(--display);
+  font-size: 0.98rem;
+  line-height: 1.4;
+  margin-bottom: 0.6rem;
+}
+
+.desglose-suya, .desglose-ideal { color: var(--tenue); margin-top: 0.35rem; }
+.desglose-etiqueta { color: var(--texto); font-weight: 600; }
+.desglose-puntos {
+  color: var(--laton);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.5rem;
+}
+
+/* ── Escalafón ─────────────────────────────────────────── */
+
+/* Lista y no tabla: en un celular cuatro columnas obligan a desplazar en
+   horizontal, y la barra hace comparable de un vistazo lo que una columna
+   de números obliga a leer fila por fila. */
+.escalafon {
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.puesto {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.85rem;
+  background: rgba(14, 27, 42, 0.55);
+  border: 1px solid var(--borde);
+  border-left: 3px solid var(--borde-control);
+}
+
+.puesto-num {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--tenue);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.puesto-datos { min-width: 0; }
+
+.puesto-nombre {
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.medidor {
+  height: 4px;
+  background: var(--borde);
+  margin-top: 0.45rem;
+}
+
+.medidor i {
+  display: block;
+  height: 100%;
+  background: var(--borde-control);
+}
+
+.puesto-marcas { text-align: right; }
+
+.puesto-marcas strong {
+  display: block;
+  font-family: var(--display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.puesto-marcas span {
+  font-size: 0.72rem;
+  color: var(--tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+.podio-1 { border-left-color: var(--laton); }
+.podio-1 .puesto-num, .podio-1 .puesto-marcas strong { color: var(--laton); }
+.podio-1 .medidor i { background: var(--laton); }
+
+.podio-2 { border-left-color: var(--plata); }
+.podio-2 .puesto-num, .podio-2 .puesto-marcas strong { color: var(--plata); }
+.podio-2 .medidor i { background: var(--plata); }
+
+.podio-3 { border-left-color: var(--bronce); }
+.podio-3 .puesto-num, .podio-3 .puesto-marcas strong { color: var(--bronce); }
+.podio-3 .medidor i { background: var(--bronce); }
+
+.puesto.propio {
+  background: rgba(201, 162, 39, 0.12);
+  border-color: var(--laton);
+}
+
+.cargando, .vacio {
+  color: var(--tenue);
+  padding: 1.75rem 0;
+  border-top: 1px solid var(--borde);
+  border-bottom: 1px solid var(--borde);
+  margin-bottom: 1.75rem;
+}
+
+/* ── Pantallas medianas y grandes ──────────────────────── */
+
+@media (min-width: 40rem) {
+  #escenario { padding: 2rem 1.25rem; }
+  body[data-vista="video"] #escenario { padding: 1.25rem; }
+
+  .marco { --pad-x: 2.5rem; --pad-y: 2.5rem; }
+
+  .expediente { margin-bottom: 1.5rem; }
+  .entrada, .dictamen { margin-bottom: 2rem; }
+
+  .escena-capa { padding: 1.1rem 1.25rem; }
+  .escena .pie-video { font-size: 0.9rem; }
+  .boton-escena { font-size: 0.92rem; padding: 0.6rem 1.1rem; }
+
+  .cabecera-caso { font-size: 0.85rem; align-items: baseline; }
+  .reloj-caso { font-size: 1.9rem; }
+
+  .opciones { gap: 0.75rem; }
+  .opcion { padding: 1rem 1.15rem; gap: 1rem; }
+
+  .cifras { gap: 2.5rem; padding: 1.5rem 0; }
+
+  .puesto { grid-template-columns: 2.25rem minmax(0, 1fr) auto; padding: 0.85rem 1rem; }
+  .puesto-nombre { font-size: 1rem; }
+
+  .boton-secundario, .boton-principal { padding: 0.9rem 1.75rem; }
+
+  /* Con ancho de sobra el sello vuelve a ser un estampado sobre la ficha. */
+  .sello {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    margin-bottom: 0;
+    font-size: 1.15rem;
+    padding: 0.4rem 1.1rem;
+    pointer-events: none;
+    opacity: 0;
+    transform: rotate(-11deg) scale(1.6);
+    animation: estampar 420ms cubic-bezier(0.2, 0.9, 0.3, 1) 300ms forwards;
+  }
+
+  @keyframes estampar {
+    from { opacity: 0; transform: rotate(-11deg) scale(1.6); }
+    to   { opacity: 0.9; transform: rotate(-11deg) scale(1); }
+  }
+
+  .titulo-veredicto { max-width: calc(100% - 9rem); }
+}
+
+/* ── Hover solo donde hay puntero ──────────────────────── */
+
+/* Sin este guardia, en pantallas táctiles el estado :hover se queda
+   pegado en el último botón tocado. */
+@media (hover: hover) and (pointer: fine) {
+  .boton-principal:hover:not(:disabled) { background: #DDB63A; }
+  .boton-secundario:hover { background: rgba(201, 162, 39, 0.12); }
+  .boton-escena:hover { background: rgba(201, 162, 39, 0.2); border-color: var(--laton); }
+  .boton-reproducir:hover { background: rgba(23, 41, 60, 0.96); }
+  .opcion:hover:not([disabled]) { border-color: var(--laton); }
+  .desglose summary:hover { color: #DDB63A; }
+}
+
+/* ── Movimiento reducido ───────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .sello {
+    animation: none;
+    opacity: 0.9;
+    transform: rotate(-11deg);
+  }
+  .barra-avance, .barra-tiempo { transition: none; }
+  .reloj-caso.critico { animation: none; }
+  .escena { animation: none; }
+  .destello, .destello-caja { animation: none; }
+  .destello-caja { transform: none; }
+  * { scroll-behavior: auto; }
+}

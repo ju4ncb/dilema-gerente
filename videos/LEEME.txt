@@ -1,0 +1,18 @@
+Coloque aqui los tres videos con estos nombres exactos:
+
+  escena1-2-llamada-oficina.mp4   Escenas 1 y 2 - La llamada y la propuesta
+  escena4a-aprobado.mp4           Escena 4A - Resultado aprobado
+  escena4b-reprobado.mp4          Escena 4B - Resultado reprobado
+
+Los nombres se configuran en CONFIG.videos dentro de app.js.
+
+PESO: el plan Hobby de Vercel rechaza el despliegue si los archivos
+subidos suman mas de 100 MB. Los tres videos actuales suman unos 68 MB,
+asi que caben, pero queda poco margen. Si agrega o reemplaza escenas,
+verifique el total antes de desplegar:
+
+  du -sh videos/          (Git Bash)
+  Get-ChildItem videos | Measure-Object Length -Sum   (PowerShell)
+
+Si se pasa de 100 MB, suba los videos a Cloudinary o Vercel Blob y
+reemplace las rutas de CONFIG.videos por las URL completas.

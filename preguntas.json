@@ -1,0 +1,322 @@
+{
+  "meta": {
+    "titulo": "El Dilema del Gerente",
+    "estructura": { "facil": 3, "media": 2, "dificil": 1 },
+    "puntajeMaximo": 19,
+    "umbralAprobacion": 10
+  },
+
+  "facil": [
+    {
+      "id": "F01",
+      "pregunta": "Un proveedor te envía un reloj costoso a tu casa justo antes de que se decida la licitación en la que participa. ¿Qué haces?",
+      "opciones": [
+        { "texto": "Lo devuelvo, reporto el hecho al comité de compras y dejo constancia escrita antes de que avance la licitación.", "puntos": 3 },
+        { "texto": "Lo devuelvo con una nota cordial y no le comento nada a nadie.", "puntos": 2 },
+        { "texto": "Lo guardo sin usarlo y evito participar en la decisión final.", "puntos": 1 },
+        { "texto": "Lo acepto: es un detalle de cortesía y yo sé separar los regalos de mis decisiones.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "F02",
+      "pregunta": "Descubres que en la planta se están vertiendo residuos de tintura sin tratamiento previo al alcantarillado.",
+      "opciones": [
+        { "texto": "Detengo el vertimiento, informo a dirección y a la autoridad ambiental, y activo el plan de tratamiento.", "puntos": 3 },
+        { "texto": "Detengo el vertimiento y ordeno corregir el proceso internamente, sin reportarlo a nadie más.", "puntos": 2 },
+        { "texto": "Lo anoto para tratarlo en el comité del próximo mes, cuando haya presupuesto.", "puntos": 1 },
+        { "texto": "No intervengo: el volumen es pequeño y nadie lo ha notado.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "F03",
+      "pregunta": "Una empleada te reporta en privado que su jefe de área la acosa verbalmente.",
+      "opciones": [
+        { "texto": "La escucho, le explico el canal formal, activo el protocolo y garantizo que no habrá represalias mientras se investiga.", "puntos": 3 },
+        { "texto": "Hablo directamente con el jefe de área para llamarle la atención y cerrar el tema rápido.", "puntos": 2 },
+        { "texto": "Le sugiero que lo hable ella misma con su jefe para resolverlo entre las partes.", "puntos": 1 },
+        { "texto": "Le recomiendo ignorarlo: así es el carácter de esa persona y no vale la pena el conflicto.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "F04",
+      "pregunta": "Un conocido te pide la base de datos de clientes de la empresa para un emprendimiento propio.",
+      "opciones": [
+        { "texto": "Me niego y le explico que son datos personales protegidos por ley que la empresa custodia, no posee.", "puntos": 3 },
+        { "texto": "Me niego sin más explicación para evitar la conversación incómoda.", "puntos": 2 },
+        { "texto": "Le paso solo una lista de nombres y ciudades, sin teléfonos ni correos.", "puntos": 1 },
+        { "texto": "Se la entrego: son contactos comerciales y ayudar a un conocido no le hace daño a nadie.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "F05",
+      "pregunta": "Un colaborador nuevo comete un error que le cuesta a la empresa un pedido importante.",
+      "opciones": [
+        { "texto": "Analizo con él qué falló en el proceso, corrijo el vacío de capacitación y asumo mi parte como líder.", "puntos": 3 },
+        { "texto": "Le explico el error con calma y le pido que no vuelva a repetirlo.", "puntos": 2 },
+        { "texto": "Reasigno la tarea a alguien con más experiencia y no vuelvo a darle responsabilidades similares.", "puntos": 1 },
+        { "texto": "Lo llamo la atención frente al equipo para que todos aprendan del ejemplo.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "F06",
+      "pregunta": "Puedes reducir costos cambiando a un insumo más barato, pero con mayor huella contaminante.",
+      "opciones": [
+        { "texto": "Hago el cambio: el ahorro es inmediato y la norma no lo prohíbe expresamente.", "puntos": 0 },
+        { "texto": "Evalúo el costo total incluyendo impacto ambiental y riesgo reputacional, y busco alternativas de ahorro sostenibles.", "puntos": 3 },
+        { "texto": "Descarto el cambio de inmediato sin evaluar otras opciones para reducir costos.", "puntos": 2 },
+        { "texto": "Hago el cambio parcialmente, solo en las líneas de producto de menor visibilidad.", "puntos": 1 }
+      ]
+    },
+    {
+      "id": "F07",
+      "pregunta": "Un cliente importante te pide que la factura salga por un monto mayor al real, a cambio de seguir comprando.",
+      "opciones": [
+        { "texto": "Me niego, explico que es un fraude documental y dejo registro del pedido en el sistema.", "puntos": 3 },
+        { "texto": "Me niego cortésmente y sigo la relación comercial como si nada hubiera pasado.", "puntos": 2 },
+        { "texto": "Le digo que lo consulte directamente con contabilidad y me desentiendo.", "puntos": 1 },
+        { "texto": "Accedo por esta vez: es un cliente clave y la diferencia es mínima.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "F08",
+      "pregunta": "Notas que en el punto de venta todos los empleados usan el mismo usuario y contraseña del sistema.",
+      "opciones": [
+        { "texto": "Creo usuarios individuales con permisos según el rol y explico al equipo por qué la trazabilidad los protege a ellos también.", "puntos": 3 },
+        { "texto": "Creo usuarios individuales y los reparto sin mayor explicación.", "puntos": 2 },
+        { "texto": "Cambio la contraseña compartida por una más segura y la sigo usando igual.", "puntos": 1 },
+        { "texto": "Lo dejo así: cambiarlo va a hacer más lento el trabajo en caja.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "F09",
+      "pregunta": "Para cumplir una meta de entrega, el equipo lleva dos semanas quedándose horas extra sin remuneración.",
+      "opciones": [
+        { "texto": "Lo permito: es un esfuerzo temporal y el equipo se comprometió voluntariamente.", "puntos": 0 },
+        { "texto": "Ordeno pagar todas las horas trabajadas y replanteo la meta y los recursos para que la sobrecarga no se repita.", "puntos": 3 },
+        { "texto": "Ordeno pagar las horas y dejo la meta como está.", "puntos": 2 },
+        { "texto": "Compenso con días libres cuando baje la carga, sin registrar las horas.", "puntos": 1 }
+      ]
+    },
+    {
+      "id": "F10",
+      "pregunta": "Recibes un correo que parece de tu banco corporativo pidiendo confirmar las credenciales por un enlace.",
+      "opciones": [
+        { "texto": "No hago clic, lo reporto al área de TI y aviso al equipo porque probablemente sea una campaña dirigida.", "puntos": 3 },
+        { "texto": "No hago clic y elimino el correo.", "puntos": 2 },
+        { "texto": "Abro el enlace solo para verificar si el sitio se ve legítimo, sin escribir nada.", "puntos": 1 },
+        { "texto": "Ingreso los datos: el correo tiene el logo del banco y no quiero que bloqueen la cuenta.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "F11",
+      "pregunta": "La planta genera retazos de tela que hoy van completos a la basura.",
+      "opciones": [
+        { "texto": "Diseño un programa de aprovechamiento: separación, reúso en productos menores y alianza con un gestor de residuos textiles.", "puntos": 3 },
+        { "texto": "Contrato un gestor autorizado para que se lleve los retazos y les dé disposición adecuada.", "puntos": 2 },
+        { "texto": "Pido que se reduzca el desperdicio en corte, sin cambiar qué se hace con lo que ya se genera.", "puntos": 1 },
+        { "texto": "Lo dejo igual: el volumen no justifica el costo de gestionarlo.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "F12",
+      "pregunta": "Un excolaborador de la competencia te ofrece la lista de precios y márgenes de su antigua empresa.",
+      "opciones": [
+        { "texto": "Rechazo la oferta, le explico que es información confidencial ajena y dejo registro del ofrecimiento.", "puntos": 3 },
+        { "texto": "Rechazo la oferta y no le doy más vueltas al asunto.", "puntos": 2 },
+        { "texto": "No la recibo, pero le pregunto en términos generales cómo se mueve el mercado.", "puntos": 1 },
+        { "texto": "La acepto: él ya no trabaja allí y la información de mercado circula de todas formas.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "F13",
+      "pregunta": "Un operario sufre una lesión leve en la máquina de corte y te pide no reportarla para no generar problemas.",
+      "opciones": [
+        { "texto": "Reporto el accidente, garantizo la atención médica e investigo la causa raíz para que no se repita.", "puntos": 3 },
+        { "texto": "Reporto el accidente y lo mando a atención médica, sin revisar la máquina.", "puntos": 2 },
+        { "texto": "Lo mando a curación con el botiquín y le digo que avise si empeora.", "puntos": 1 },
+        { "texto": "Acepto no reportarlo: fue leve y un reporte afecta los indicadores de seguridad del área.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "F14",
+      "pregunta": "Para una vacante clave, uno de los candidatos es sobrino de un directivo, pero hay otro perfil claramente más fuerte.",
+      "opciones": [
+        { "texto": "Aplico el proceso de selección con criterios documentados, declaro el conflicto de interés y contrato al mejor perfil.", "puntos": 3 },
+        { "texto": "Contrato al mejor perfil sin declarar formalmente el conflicto de interés.", "puntos": 2 },
+        { "texto": "Le doy el cargo al sobrino, pero le exijo un plan de desarrollo exigente para nivelarse.", "puntos": 1 },
+        { "texto": "Contrato al sobrino: mantener buena relación con la dirección también es parte del cargo.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "F15",
+      "pregunta": "Te presentan un proyecto para cambiar la iluminación de la planta a tecnología eficiente, con retorno de inversión en 18 meses.",
+      "opciones": [
+        { "texto": "Lo rechazo: la inversión inicial afecta el resultado del trimestre en curso.", "puntos": 0 },
+        { "texto": "Lo apruebo y lo integro a un plan de eficiencia energética con medición de consumo antes y después.", "puntos": 3 },
+        { "texto": "Lo apruebo tal como está presentado, sin medición posterior.", "puntos": 2 },
+        { "texto": "Lo apruebo solo para el área administrativa, que es donde más se nota ante las visitas.", "puntos": 1 }
+      ]
+    }
+  ],
+
+  "media": [
+    {
+      "id": "M01",
+      "pregunta": "Una certificación ambiental abriría el mercado europeo, pero cuesta el 8% de la utilidad anual y retrasaría la producción tres meses.",
+      "opciones": [
+        { "texto": "La descarto: el costo y el retraso no se justifican con la demanda actual.", "puntos": 0 },
+        { "texto": "Presento a la junta un análisis a tres años con costo, acceso a mercado y riesgo de quedar fuera por regulación, y propongo un cronograma por fases.", "puntos": 3 },
+        { "texto": "La impulso de inmediato por su valor estratégico, asumiendo el retraso sin plan de mitigación.", "puntos": 2 },
+        { "texto": "La aplazo indefinidamente hasta que un cliente la exija expresamente.", "puntos": 1 }
+      ]
+    },
+    {
+      "id": "M02",
+      "pregunta": "Tu proveedor más económico es un taller satélite del que se rumora que subcontrata trabajo en condiciones irregulares.",
+      "opciones": [
+        { "texto": "Suspendo pedidos nuevos, realizo auditoría en sitio y defino si se corrige con un plan verificable o se termina la relación.", "puntos": 3 },
+        { "texto": "Termino el contrato de inmediato y busco otro proveedor.", "puntos": 2 },
+        { "texto": "Le pido al proveedor que firme una declaración de cumplimiento laboral y sigo comprando.", "puntos": 1 },
+        { "texto": "Sigo igual: son rumores sin prueba y lo que ocurre dentro del taller es responsabilidad de ellos.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "M03",
+      "pregunta": "Detectan una filtración que expuso datos de contacto y de compra de 4.000 clientes. Aún nadie fuera de la empresa lo sabe.",
+      "opciones": [
+        { "texto": "Contengo el incidente, notifico a la autoridad de protección de datos y a los clientes afectados en los plazos legales, y explico qué deben hacer.", "puntos": 3 },
+        { "texto": "Contengo el incidente y notifico a la autoridad, pero no a los clientes para no generar alarma.", "puntos": 2 },
+        { "texto": "Corrijo la vulnerabilidad en silencio y refuerzo la seguridad, sin notificar a nadie.", "puntos": 1 },
+        { "texto": "No hago nada: no hubo daño económico comprobado y divulgarlo solo dañaría la reputación.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "M04",
+      "pregunta": "La automatización del área de corte haría innecesarios 12 puestos de trabajo, con ahorro sustancial.",
+      "opciones": [
+        { "texto": "Automatizo con un plan de recalificación y reubicación interna, y negocio salidas dignas solo para quien no pueda reubicarse.", "puntos": 3 },
+        { "texto": "Automatizo y ofrezco indemnizaciones por encima de lo legal a los 12 empleados.", "puntos": 2 },
+        { "texto": "Renuncio a la automatización para no afectar el empleo, aunque comprometa la competitividad.", "puntos": 1 },
+        { "texto": "Automatizo y liquido a los 12 cumpliendo el mínimo legal: la empresa no es una obra social.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "M05",
+      "pregunta": "Faltan tres días para cerrar el trimestre y la meta está 6% por debajo. Contabilidad sugiere registrar como ventas los pedidos ya facturados pero no despachados.",
+      "opciones": [
+        { "texto": "Lo autorizo: los pedidos están firmes y se despachan la próxima semana de todos modos.", "puntos": 0 },
+        { "texto": "Lo rechazo, reporto el resultado real y presento un plan de recuperación con las causas del incumplimiento.", "puntos": 3 },
+        { "texto": "Lo rechazo y reporto el resultado real, sin analizar por qué se incumplió.", "puntos": 2 },
+        { "texto": "Lo rechazo, pero pido acelerar despachos aunque implique horas extra improvisadas y errores de calidad.", "puntos": 1 }
+      ]
+    },
+    {
+      "id": "M06",
+      "pregunta": "Tu vendedor de mejores resultados humilla sistemáticamente a los auxiliares. Tres personas ya renunciaron de esa área.",
+      "opciones": [
+        { "texto": "Le doy retroalimentación formal con consecuencias definidas y plazo, y si no cambia lo desvinculo, aunque afecte las ventas.", "puntos": 3 },
+        { "texto": "Lo desvinculo de inmediato sin darle oportunidad de corregir ni dejar registro del proceso.", "puntos": 2 },
+        { "texto": "Lo aíslo del equipo dándole una zona propia, sin abordar la conducta.", "puntos": 1 },
+        { "texto": "Lo mantengo tal cual: sus números sostienen el área y el resto del equipo se adaptará.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "M07",
+      "pregunta": "Marketing propone etiquetar la línea nueva como '100% ecológica' cuando en realidad solo el 30% del material es reciclado.",
+      "opciones": [
+        { "texto": "Exijo comunicar la cifra real y verificable, y propongo una meta pública de incremento del material reciclado.", "puntos": 3 },
+        { "texto": "Cambio la etiqueta por '30% material reciclado' sin más contexto ni compromiso a futuro.", "puntos": 2 },
+        { "texto": "Autorizo el término 'ecológica' pero sin el '100%', dejando la ambigüedad.", "puntos": 1 },
+        { "texto": "Apruebo la propuesta: es lenguaje publicitario y la competencia hace exactamente lo mismo.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "M08",
+      "pregunta": "Proponen instalar software que registre pantalla y pulsaciones de teclado en todos los equipos, incluidos los del personal remoto.",
+      "opciones": [
+        { "texto": "Lo rechazo en esa forma y defino un monitoreo proporcional, informado por escrito y limitado a sistemas críticos del trabajo.", "puntos": 3 },
+        { "texto": "Lo instalo, pero informo previamente a los empleados que serán monitoreados de forma integral.", "puntos": 2 },
+        { "texto": "Lo instalo solo en las áreas que manejan dinero, sin informar a nadie.", "puntos": 1 },
+        { "texto": "Lo instalo en todos los equipos sin avisar: son herramientas de la empresa y el aviso arruinaría el propósito.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "M09",
+      "pregunta": "El nuevo módulo de pagos debe salir el lunes por compromiso comercial, pero no se han hecho las pruebas de seguridad.",
+      "opciones": [
+        { "texto": "Lanzo el lunes y programo las pruebas de seguridad para la semana siguiente, monitoreando de cerca.", "puntos": 0 },
+        { "texto": "Aplazo el lanzamiento, explico el riesgo al cliente con transparencia y comprometo una fecha realista con pruebas completas.", "puntos": 3 },
+        { "texto": "Aplazo el lanzamiento sin explicar al cliente la razón técnica de fondo.", "puntos": 2 },
+        { "texto": "Lanzo el lunes solo para un grupo pequeño de clientes, sin pruebas de seguridad previas.", "puntos": 1 }
+      ]
+    },
+    {
+      "id": "M10",
+      "pregunta": "El contrato más grande del año viene de una empresa con sanciones ambientales vigentes y demandas laborales en curso.",
+      "opciones": [
+        { "texto": "Hago debida diligencia, y si acepto, incorporo cláusulas de cumplimiento verificable con derecho a terminar el contrato.", "puntos": 3 },
+        { "texto": "Rechazo el contrato de plano por el perfil del cliente.", "puntos": 2 },
+        { "texto": "Acepto el contrato pero pido que no se divulgue públicamente la relación comercial.", "puntos": 1 },
+        { "texto": "Acepto sin condiciones: nosotros solo vendemos, sus problemas legales no son asunto nuestro.", "puntos": 0 }
+      ]
+    }
+  ],
+
+  "dificil": [
+    {
+      "id": "D01",
+      "pregunta": "Un defecto de fabricación afecta un lote ya vendido. El riesgo para el usuario es bajo pero real, y el retiro costaría el equivalente a la utilidad de todo el semestre.",
+      "opciones": [
+        { "texto": "Ejecuto el retiro completo, notifico a los clientes y a la autoridad, asumo el costo y corrijo la causa raíz en el proceso.", "puntos": 4 },
+        { "texto": "Notifico a los clientes del lote afectado y ofrezco reposición voluntaria a quien la solicite.", "puntos": 3 },
+        { "texto": "Corrijo el proceso hacia adelante y no informo sobre el lote ya vendido.", "puntos": 0 },
+        { "texto": "Espero a ver si algún cliente reclama antes de tomar cualquier medida.", "puntos": 0 },
+        { "texto": "Retiro discretamente el producto de los puntos de venta y guardo silencio sobre lo ya despachado.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "D02",
+      "pregunta": "Un ataque de ransomware cifró los servidores. Los atacantes exigen pago y amenazan con publicar datos de clientes. La copia de seguridad tiene 40 días de antigüedad.",
+      "opciones": [
+        { "texto": "Pago el rescate de inmediato: es la vía más rápida para proteger a los clientes y restablecer la operación.", "puntos": 0 },
+        { "texto": "Aíslo los sistemas, denuncio ante las autoridades, restauro desde la copia y notifico a los clientes sobre la posible exposición de sus datos.", "puntos": 4 },
+        { "texto": "Aíslo los sistemas y restauro desde la copia asumiendo la pérdida de datos, sin denunciar ni notificar a los clientes.", "puntos": 3 },
+        { "texto": "Negocio en privado una rebaja del rescate y mantengo el incidente fuera de todo registro.", "puntos": 0 },
+        { "texto": "Reconstruyo los datos manualmente y presento la caída como una falla técnica rutinaria ante clientes y empleados.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "D03",
+      "pregunta": "La planta más antigua incumple los nuevos límites de emisiones. Adecuarla cuesta más que su valor; cerrarla dejaría sin empleo a 60 personas en un municipio pequeño donde es el mayor empleador.",
+      "opciones": [
+        { "texto": "Mantengo la operación mientras gestiono prórrogas ante la autoridad ambiental, porque el empleo local es prioritario.", "puntos": 0 },
+        { "texto": "Cierro la planta de inmediato cumpliendo las liquidaciones legales, sin plan de transición para la comunidad.", "puntos": 0 },
+        { "texto": "Suspendo la operación de inmediato y ejecuto un cierre con reubicación, recalificación laboral y acompañamiento a la comunidad en un cronograma acordado con la autoridad.", "puntos": 4 },
+        { "texto": "Reduzco la producción al mínimo para bajar las emisiones bajo el límite y conservar la mayoría de los empleos, sin adecuar la planta.", "puntos": 3 },
+        { "texto": "Traslado la operación a un municipio con normativa ambiental más laxa y conservo los empleos allá.", "puntos": 0 }
+      ]
+    },
+    {
+      "id": "D04",
+      "pregunta": "Encuentras evidencia sólida de que un directivo superior, con influencia sobre tu propio ascenso, ha estado desviando fondos.",
+      "opciones": [
+        { "texto": "Reúno la evidencia y la reporto por el canal formal de denuncias o directamente a la junta, dejando trazabilidad de la entrega.", "puntos": 4 },
+        { "texto": "Confronto en privado al directivo y le exijo devolver los fondos y renunciar.", "puntos": 0 },
+        { "texto": "Guardo la evidencia como respaldo y espero a que se defina mi ascenso antes de actuar.", "puntos": 0 },
+        { "texto": "Comento el hallazgo con colegas de confianza para medir el riesgo antes de decidir si lo reporto.", "puntos": 0 },
+        { "texto": "Lo reporto de forma anónima sin entregar la evidencia que tengo en mi poder.", "puntos": 3 }
+      ]
+    },
+    {
+      "id": "D05",
+      "pregunta": "Tu único proveedor de un insumo crítico incumple la norma ambiental. Cambiar de proveedor tomaría ocho meses y pondría en riesgo los contratos vigentes.",
+      "opciones": [
+        { "texto": "Sigo comprando y guardo silencio: sin ese insumo la empresa no puede cumplir sus contratos.", "puntos": 0 },
+        { "texto": "Le exijo un plan de cumplimiento con hitos verificables y auditoría externa, mientras desarrollo en paralelo un proveedor alterno, e informo el riesgo a la junta.", "puntos": 4 },
+        { "texto": "Corto la relación de inmediato y asumo el incumplimiento de los contratos vigentes.", "puntos": 3 },
+        { "texto": "Le pido que arregle el tema por su cuenta y me desentiendo, porque su cumplimiento normativo no es mi responsabilidad.", "puntos": 0 },
+        { "texto": "Sigo comprando a través de un intermediario para que la compra no quede registrada a nombre de la empresa.", "puntos": 0 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B1622">
+<meta name="description" content="Juego de evaluación sobre liderazgo ético y sostenible: seis casos, ninguna respuesta cómoda.">
+<title>El Dilema del Gerente</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230E1B2A'/%3E%3Cpath d='M16 5v22M7 12h18' stroke='%23C9A227' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Región para anunciar a los lectores de pantalla los cambios que
+     solo se comunican visualmente: el caso nuevo y el tiempo que queda. -->
+<p class="solo-lector" id="anuncio" role="status" aria-live="polite"></p>
+
+<main id="escenario">
+
+  <!-- ── Inicio ─────────────────────────────────────────── -->
+  <section class="pantalla" data-pantalla="inicio">
+    <div class="marco">
+      <p class="expediente">Expediente de evaluación &middot; Gerencia de Operaciones y Sostenibilidad</p>
+      <h1 class="titulo">El Dilema<br>del Gerente</h1>
+      <p class="entrada">
+        Seis casos. Ninguna respuesta cómoda. Su criterio queda registrado.
+      </p>
+
+      <div class="campo">
+        <label for="nombre">Nombre del candidato</label>
+        <input id="nombre" type="text" maxlength="30" autocomplete="name"
+               autocapitalize="words" spellcheck="false" enterkeyhint="go"
+               placeholder="Escriba su nombre completo">
+        <p class="error" id="error-nombre" role="alert" hidden></p>
+      </div>
+
+      <button class="boton-principal" id="btn-iniciar">Presentarse a la evaluación</button>
+
+      <p class="aviso-reloj">
+        Cada caso tiene un tiempo límite. Si se agota, el caso queda en cero:
+        en una gerencia, no decidir también es una decisión.
+      </p>
+
+      <p class="nota" id="nota-registro" hidden>Este equipo ya registró una evaluación a nombre de <strong></strong>.</p>
+
+      <!-- El escalafón se ve desde el arranque: saber contra quién se
+           compite es lo que hace que valga la pena competir. -->
+      <section class="avance-escalafon" id="avance-escalafon" hidden>
+        <h2 class="rotulo-seccion">Los mejores hasta ahora</h2>
+        <div id="escalafon-inicio"></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ── Cinemática ─────────────────────────────────────── -->
+  <section class="pantalla" data-pantalla="video">
+    <div class="escena" id="escena" tabindex="-1" aria-label="Escena en reproducción">
+      <video id="reproductor" playsinline preload="auto"></video>
+
+      <div class="escena-capa">
+        <p class="pie-video" id="pie-video"></p>
+        <div class="escena-botones">
+          <button class="boton-escena" id="btn-sonido" type="button" aria-pressed="false">
+            <span class="icono-sonido" aria-hidden="true"></span>
+            <span id="btn-sonido-texto">Silenciar</span>
+          </button>
+          <button class="boton-escena boton-escena--omitir" id="btn-saltar" type="button">Omitir escena</button>
+        </div>
+      </div>
+
+      <button class="boton-reproducir" id="btn-reproducir" type="button" hidden>
+        <span aria-hidden="true">&#9654;</span> Toque para reproducir
+      </button>
+    </div>
+  </section>
+
+  <!-- ── Caso ───────────────────────────────────────────── -->
+  <section class="pantalla" data-pantalla="caso">
+    <div class="marco marco--ancho marco--caso">
+
+      <!-- Se queda pegada arriba: en un celular las opciones empujan el
+           reloj fuera de pantalla si la cabecera se va con el scroll. -->
+      <div class="cabecera-fija">
+        <div class="pista-tiempo"><i class="barra-tiempo" id="barra-tiempo"></i></div>
+
+        <header class="cabecera-caso">
+          <div class="cabecera-caso__izq">
+            <p class="contador">Caso <span id="num-caso">1</span> de <span id="total-casos">6</span></p>
+            <p class="fase" id="fase-caso"></p>
+          </div>
+          <div class="cabecera-caso__der">
+            <p class="reloj-caso" id="reloj-caso">1:00</p>
+            <p class="reloj-total">total <span id="reloj">0:00</span></p>
+          </div>
+        </header>
+
+        <div class="barra"><div class="barra-avance" id="barra-avance"></div></div>
+      </div>
+
+      <h2 class="enunciado" id="enunciado" tabindex="-1"></h2>
+
+      <ul class="opciones" id="opciones"></ul>
+
+      <p class="ayuda" id="ayuda-caso">Toque una opción para responder.</p>
+    </div>
+  </section>
+
+  <!-- ── Veredicto ──────────────────────────────────────── -->
+  <section class="pantalla" data-pantalla="veredicto">
+    <div class="marco marco--ancho">
+      <div class="sello" id="sello"><span id="sello-texto"></span></div>
+
+      <p class="expediente">Dictamen final</p>
+      <h2 class="titulo-veredicto" id="titulo-veredicto" tabindex="-1"></h2>
+      <p class="dictamen" id="dictamen"></p>
+
+      <div class="cifras">
+        <div class="cifra">
+          <strong id="cifra-puntos">0</strong>
+          <span>de 19 puntos</span>
+        </div>
+        <div class="cifra">
+          <strong id="cifra-porcentaje">0%</strong>
+          <span>de acierto</span>
+        </div>
+        <div class="cifra">
+          <strong id="cifra-tiempo">0:00</strong>
+          <span>en decidir</span>
+        </div>
+      </div>
+
+      <details class="desglose">
+        <summary>Ver el desglose caso por caso</summary>
+        <ol id="lista-desglose"></ol>
+      </details>
+
+      <button class="boton-principal" id="btn-ranking">Ver el escalafón</button>
+    </div>
+  </section>
+
+  <!-- ── Escalafón ──────────────────────────────────────── -->
+  <section class="pantalla" data-pantalla="ranking">
+    <div class="marco marco--ancho">
+      <p class="expediente">Escalafón de candidatos</p>
+      <h2 class="titulo-ranking" id="foco-ranking" tabindex="-1">Los mejores gerentes</h2>
+      <p class="entrada">Ordenados por puntaje. El tiempo desempata.</p>
+
+      <div id="contenedor-ranking"><p class="cargando">Consultando el escalafón&hellip;</p></div>
+
+      <button class="boton-secundario" id="btn-reiniciar">Evaluar a otro candidato</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- Aviso momentáneo entre pantallas: fin de tiempo, fin de casos. -->
+<div class="destello" id="destello" hidden>
+  <p class="destello-caja" id="destello-caja"><span id="destello-texto"></span></p>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

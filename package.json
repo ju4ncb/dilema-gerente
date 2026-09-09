@@ -1,0 +1,15 @@
+{
+  "name": "eldilemadelgerente",
+  "version": "1.0.0",
+  "description": "El Dilema del Gerente — juego de evaluación sobre liderazgo ético y sostenible",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@upstash/redis": "^1.34.3"
+  },
+  "scripts": {
+    "dev": "node dev-server.mjs",
+    "dev:vercel": "vercel dev",
+    "deploy": "vercel deploy --prod"
+  }
+}
