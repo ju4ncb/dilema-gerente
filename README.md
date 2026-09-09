@@ -160,6 +160,58 @@ Sin esa integración el juego funciona completo; solo el escalafón muestra un
 aviso de que no está disponible. En local, sin las variables, el escalafón
 usa un almacén en memoria (ver arriba).
 
+> **Cuidado con `vercel env pull`.** Ese comando trae las credenciales de
+> **producción**. Con `.env.local` en su sitio, cada partida que juegue en
+> local escribe en el escalafón real. Para probar sin ensuciar los datos
+> de la clase, renombre el archivo (`mv .env.local .env.local.off`) y el
+> servidor vuelve al almacén en memoria.
+
+### Reiniciar el escalafón
+
+**En desarrollo**, si está usando el almacén en memoria, basta con
+reiniciar el servidor: `Ctrl+C` y `npm run dev`. Los puntajes viven en la
+memoria del proceso y no sobreviven.
+
+**En producción** hay tres caminos, de menos a más cómodo si lo va a
+hacer seguido:
+
+1. **Consola de Upstash.** Entre a la base desde el panel de Vercel
+   (pestaña Storage), abra el *Data Browser* y borre la clave
+   `dilema:escalafon`. No requiere tocar código.
+
+2. **API REST de Upstash**, con las variables que ya tiene:
+
+   ```bash
+   curl -X POST "$UPSTASH_REDIS_REST_URL/del/dilema:escalafon"      -H "Authorization: Bearer $UPSTASH_REDIS_REST_TOKEN"
+   ```
+
+3. **El endpoint del propio juego**, pensado para reiniciar entre grupos
+   sin abrir ningún panel. Está protegido por token porque la URL es
+   pública y el borrado es irreversible:
+
+   - Genere un token:
+     `node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"`
+   - En Vercel, **Settings → Environment Variables**, agregue
+     `ADMIN_TOKEN` con ese valor y vuelva a desplegar.
+   - Reinicie cuando quiera:
+
+   ```bash
+   curl -X DELETE https://SU-PROYECTO.vercel.app/api/leaderboard      -H "x-admin-token: SU-TOKEN"
+   ```
+
+   ```powershell
+   # PowerShell
+   Invoke-RestMethod -Method Delete `
+     -Uri "https://SU-PROYECTO.vercel.app/api/leaderboard" `
+     -Headers @{ "x-admin-token" = "SU-TOKEN" }
+   ```
+
+   Responde `{"ok":true,"borrados":N}`. **Sin `ADMIN_TOKEN` definido el
+   endpoint devuelve 503 y no borra nada**: se prefiere que no funcione a
+   que quede abierto para cualquiera que pruebe un DELETE. Un token que no
+   coincide devuelve 401, y la comparación es en tiempo constante para no
+   filtrar cuántos caracteres se acertaron.
+
 ## Las cinemáticas
 
 Las escenas se reproducen en un escenario propio, sin los controles

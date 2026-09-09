@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "node:crypto";
+
 const CLAVE = "dilema:escalafon";
 const PUNTAJE_MAXIMO = 19;
 const TOPE = 10;
@@ -35,7 +37,8 @@ export default async function handler(req, res) {
     }
     if (req.method === "POST") return await guardar(req, res);
     if (req.method === "GET") return await consultar(res);
-    res.setHeader("Allow", "GET, POST");
+    if (req.method === "DELETE") return await reiniciar(req, res);
+    res.setHeader("Allow", "GET, POST, DELETE");
     return res.status(405).json({ error: "Método no permitido" });
   } catch (error) {
     console.error("Fallo en el escalafón:", error);
@@ -88,4 +91,45 @@ async function consultar(res) {
 
   res.setHeader("Cache-Control", "no-store");
   return res.status(200).json(filas);
+}
+
+/* ── Reinicio del escalafón ──────────────────────────────── */
+
+// Comparación en tiempo constante: un `===` sobre un token filtra, por lo
+// que tarda, cuántos caracteres iniciales acertó quien esté probando.
+function tokenValido(recibido, esperado) {
+  if (typeof recibido !== "string") return false;
+  const a = Buffer.from(recibido);
+  const b = Buffer.from(esperado);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+// Borra todos los puntajes. Es irreversible y la URL es pública, así que
+// exige un token: sin ADMIN_TOKEN definido no se borra nada, en vez de
+// quedar abierto a cualquiera que descubra el método DELETE.
+async function reiniciar(req, res) {
+  const esperado = process.env.ADMIN_TOKEN;
+
+  if (!esperado) {
+    return res.status(503).json({
+      error: "Defina la variable de entorno ADMIN_TOKEN para habilitar el reinicio del escalafón"
+    });
+  }
+  if (!tokenValido(req.headers["x-admin-token"], esperado)) {
+    return res.status(401).json({ error: "Token de administración inválido" });
+  }
+
+  let borrados;
+  if (hayRedis) {
+    const db = await redis();
+    borrados = await db.zcard(CLAVE);
+    await db.del(CLAVE);
+  } else {
+    borrados = memoria.length;
+    memoria.length = 0;
+  }
+
+  console.log(`Escalafón reiniciado: ${borrados} registro(s) borrado(s)`);
+  res.setHeader("Cache-Control", "no-store");
+  return res.status(200).json({ ok: true, borrados });
 }
