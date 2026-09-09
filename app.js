@@ -224,6 +224,7 @@ function prepararInicio() {
   }
 
   cargarEscalafonInicio();
+  prepararReinicio();
 }
 
 function iniciar() {
@@ -709,19 +710,109 @@ function construirEscalafon(filas, tope) {
 
 // En el arranque el escalafón es un extra: si falla o está vacío se
 // esconde entero, sin avisos de error que estorben antes de empezar.
+// También se vuelve a llamar tras un reinicio, así que tiene que saber
+// ocultarse, no solo aparecer.
 async function cargarEscalafonInicio() {
+  const seccion = $("#avance-escalafon");
+  const caja = $("#escalafon-inicio");
+
+  const esconder = () => {
+    caja.innerHTML = "";
+    seccion.hidden = true;
+  };
+
   let filas;
   try {
     filas = await consultarEscalafon();
   } catch {
-    return;
+    return esconder();
   }
-  if (!filas.length) return;
+  if (!filas.length) return esconder();
 
-  const caja = $("#escalafon-inicio");
   caja.innerHTML = "";
   caja.appendChild(construirEscalafon(filas, CONFIG.topeInicio));
-  $("#avance-escalafon").hidden = false;
+  seccion.hidden = false;
+}
+
+/* ── Reinicio del escalafón ──────────────────────────────── */
+
+function cerrarFormaPin() {
+  $("#forma-pin").hidden = true;
+  $("#btn-abrir-pin").setAttribute("aria-expanded", "false");
+  $("#pin").value = "";
+  $("#error-pin").hidden = true;
+}
+
+async function reiniciarEscalafon(evento) {
+  evento.preventDefault();
+
+  const campo = $("#pin");
+  const error = $("#error-pin");
+  const boton = $("#btn-confirmar-pin");
+  const pin = campo.value.trim();
+
+  if (!pin) {
+    error.textContent = "Escriba el PIN.";
+    error.hidden = false;
+    campo.focus();
+    return;
+  }
+
+  boton.disabled = true;
+  boton.textContent = "Borrando…";
+
+  let respuesta;
+  try {
+    // El PIN viaja en una cabecera y se compara contra el servidor. Aquí
+    // no hay nada que comparar: el navegador no guarda el secreto.
+    respuesta = await fetch(CONFIG.api, {
+      method: "DELETE",
+      headers: { "x-admin-pin": pin }
+    });
+  } catch {
+    error.textContent = "No se pudo contactar al servidor.";
+    error.hidden = false;
+    boton.disabled = false;
+    boton.textContent = "Borrar";
+    return;
+  }
+
+  boton.disabled = false;
+  boton.textContent = "Borrar";
+
+  if (!respuesta.ok) {
+    const cuerpo = await respuesta.json().catch(() => ({}));
+    error.textContent = cuerpo.error ?? "No se pudo reiniciar el escalafón.";
+    error.hidden = false;
+    campo.select();
+    return;
+  }
+
+  const { borrados } = await respuesta.json().catch(() => ({ borrados: 0 }));
+  cerrarFormaPin();
+  await cargarEscalafonInicio();
+  await aviso(`Escalafón reiniciado · ${borrados} registro${borrados === 1 ? "" : "s"}`, "exito", 1400);
+  $("#btn-abrir-pin").focus();
+}
+
+function prepararReinicio() {
+  const forma = $("#forma-pin");
+  const abrir = $("#btn-abrir-pin");
+
+  abrir.onclick = () => {
+    const abriendo = forma.hidden;
+    forma.hidden = !abriendo;
+    abrir.setAttribute("aria-expanded", String(abriendo));
+    if (abriendo) $("#pin").focus();
+    else cerrarFormaPin();
+  };
+
+  $("#btn-cancelar-pin").onclick = () => {
+    cerrarFormaPin();
+    abrir.focus();
+  };
+
+  forma.addEventListener("submit", reiniciarEscalafon);
 }
 
 async function pintarRanking() {

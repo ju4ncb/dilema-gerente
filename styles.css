@@ -211,6 +211,94 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   border-top: 1px solid var(--borde);
 }
 
+/* ── Reinicio del escalafón ────────────────────────────── */
+
+/* Deliberadamente discreto: es un control destructivo en la misma
+   pantalla donde los estudiantes buscan el boton de empezar. */
+.zona-admin {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--borde);
+}
+
+.boton-tenue {
+  background: none;
+  border: 0;
+  padding: 0.6rem 0;
+  font-family: var(--ui);
+  font-size: 0.82rem;
+  color: var(--tenue);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.boton-tenue:focus-visible {
+  outline: 2px solid var(--laton);
+  outline-offset: 2px;
+}
+
+.forma-pin {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  background: var(--fondo);
+  border: 1px solid var(--borde-control);
+  border-left: 3px solid var(--reprobado);
+}
+
+.aviso-borrado {
+  font-size: 0.85rem;
+  color: var(--reprobado);
+  margin-bottom: 0.9rem;
+}
+
+.forma-pin label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.fila-pin {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.fila-pin input {
+  flex: 1 1 8rem;
+  min-width: 0;
+  background: var(--superficie);
+  border: 1px solid var(--borde-control);
+  color: var(--texto);
+  font-family: var(--ui);
+  /* 16px o mas: por debajo, iOS hace zoom al enfocar. */
+  font-size: 1.05rem;
+  letter-spacing: 0.2em;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0;
+}
+
+.fila-pin input:focus-visible {
+  outline: 2px solid var(--laton);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.fila-pin .boton-secundario {
+  flex: 0 0 auto;
+  min-height: 0;
+  padding: 0.7rem 1.1rem;
+  font-size: 0.9rem;
+  border-color: var(--reprobado);
+  color: var(--reprobado);
+}
+
+.fila-pin .boton-secundario:active { background: rgba(232, 119, 109, 0.18); }
+.fila-pin .boton-tenue { flex: 0 0 auto; padding: 0.7rem 0.4rem; }
+
 /* ── Botones ───────────────────────────────────────────── */
 
 .boton-principal, .boton-secundario {
@@ -849,6 +937,8 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   .boton-reproducir:hover { background: rgba(23, 41, 60, 0.96); }
   .opcion:hover:not([disabled]) { border-color: var(--laton); }
   .desglose summary:hover { color: #DDB63A; }
+  .boton-tenue:hover { color: var(--texto); }
+  .fila-pin .boton-secundario:hover { background: rgba(232, 119, 109, 0.14); }
 }
 
 /* ── Movimiento reducido ───────────────────────────────── */

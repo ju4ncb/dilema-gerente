@@ -185,32 +185,44 @@ hacer seguido:
    curl -X POST "$UPSTASH_REDIS_REST_URL/del/dilema:escalafon"      -H "Authorization: Bearer $UPSTASH_REDIS_REST_TOKEN"
    ```
 
-3. **El endpoint del propio juego**, pensado para reiniciar entre grupos
-   sin abrir ningún panel. Está protegido por token porque la URL es
-   pública y el borrado es irreversible:
+3. **El botón de la pantalla de inicio**, que es lo más cómodo entre
+   grupos. Abajo del escalafón hay un enlace discreto, *Reiniciar el
+   escalafón*, que despliega un campo de PIN. El PIN por defecto es
+   **103510**.
 
-   - Genere un token:
-     `node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"`
-   - En Vercel, **Settings → Environment Variables**, agregue
-     `ADMIN_TOKEN` con ese valor y vuelva a desplegar.
-   - Reinicie cuando quiera:
+   Responde `{"ok":true,"borrados":N}` y la pantalla confirma con un
+   aviso. Para scripts existe la misma ruta con la cabecera
+   `x-admin-token` contra la variable `ADMIN_TOKEN`:
 
    ```bash
-   curl -X DELETE https://SU-PROYECTO.vercel.app/api/leaderboard      -H "x-admin-token: SU-TOKEN"
+   curl -X DELETE https://SU-PROYECTO.vercel.app/api/leaderboard      -H "x-admin-pin: 103510"
    ```
 
    ```powershell
    # PowerShell
    Invoke-RestMethod -Method Delete `
      -Uri "https://SU-PROYECTO.vercel.app/api/leaderboard" `
-     -Headers @{ "x-admin-token" = "SU-TOKEN" }
+     -Headers @{ "x-admin-pin" = "103510" }
    ```
 
-   Responde `{"ok":true,"borrados":N}`. **Sin `ADMIN_TOKEN` definido el
-   endpoint devuelve 503 y no borra nada**: se prefiere que no funcione a
-   que quede abierto para cualquiera que pruebe un DELETE. Un token que no
-   coincide devuelve 401, y la comparación es en tiempo constante para no
-   filtrar cuántos caracteres se acertaron.
+#### Qué protege el PIN y qué no
+
+El PIN **se comprueba en el servidor**, nunca en el navegador: el código
+que llega al cliente no lo contiene, así que no se puede sacar leyendo el
+código fuente de la página.
+
+Pero el valor por defecto sí está en `api/leaderboard.js`, y este
+repositorio es público: **cualquiera que lo abra puede leer 103510**.
+Para una dinámica de aula alcanza —evita el borrado por curiosidad o por
+accidente—, pero si quiere que sea de verdad secreto, defina `ADMIN_PIN`
+en Vercel (**Settings → Environment Variables**) y vuelva a desplegar. La
+variable reemplaza al valor por defecto, que deja de servir.
+
+Como un PIN de seis dígitos se agota a fuerza bruta en un millón de
+intentos, el endpoint lleva un contador por IP en Redis: **cinco fallos
+bloquean esa IP durante 15 minutos** (`429`). El contador se borra al
+acertar. En local, sin Redis, no hay contador: solo cuenta en producción,
+que es donde importa.
 
 ## Las cinemáticas
 

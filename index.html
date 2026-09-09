@@ -52,6 +52,27 @@
         <h2 class="rotulo-seccion">Los mejores hasta ahora</h2>
         <div id="escalafon-inicio"></div>
       </section>
+
+      <!-- Reinicio del escalafón. El PIN se comprueba en el servidor: si
+           se validara aquí, bastaría con leer el código fuente. -->
+      <div class="zona-admin">
+        <button class="boton-tenue" id="btn-abrir-pin" type="button"
+                aria-expanded="false" aria-controls="forma-pin">Reiniciar el escalafón</button>
+
+        <form class="forma-pin" id="forma-pin" hidden>
+          <p class="aviso-borrado">
+            Se borran todos los puntajes registrados. No se puede deshacer.
+          </p>
+          <label for="pin">PIN de administración</label>
+          <div class="fila-pin">
+            <input id="pin" type="password" inputmode="numeric" autocomplete="off"
+                   maxlength="12" placeholder="Seis dígitos">
+            <button class="boton-secundario" id="btn-confirmar-pin" type="submit">Borrar</button>
+            <button class="boton-tenue" id="btn-cancelar-pin" type="button">Cancelar</button>
+          </div>
+          <p class="error" id="error-pin" role="alert" hidden></p>
+        </form>
+      </div>
     </div>
   </section>
 

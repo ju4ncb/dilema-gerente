@@ -13,6 +13,19 @@ const hayRedis = Boolean(
 );
 const enVercel = Boolean(process.env.VERCEL);
 
+// PIN del botón de la pantalla de inicio. El valor por defecto está en el
+// código —y por tanto en el repositorio— para que el botón funcione sin
+// configurar nada. Defina ADMIN_PIN en Vercel para que sea de verdad
+// secreto. ADMIN_TOKEN es la vía alterna, pensada para scripts.
+const PIN_POR_DEFECTO = "103510";
+const PIN_ESPERADO = process.env.ADMIN_PIN || PIN_POR_DEFECTO;
+const TOKEN_ESPERADO = process.env.ADMIN_TOKEN || "";
+
+// Un PIN de seis dígitos se agota a fuerza bruta en un millón de intentos.
+// El contador por IP lo vuelve inviable sin encarecer el uso legítimo.
+const MAX_INTENTOS = 5;
+const VENTANA_INTENTOS = 900; // segundos
+
 // El import es dinámico para que el servidor local pueda levantar el
 // escalafón en memoria sin necesidad de instalar dependencias.
 let cliente = null;
@@ -95,28 +108,63 @@ async function consultar(res) {
 
 /* ── Reinicio del escalafón ──────────────────────────────── */
 
-// Comparación en tiempo constante: un `===` sobre un token filtra, por lo
-// que tarda, cuántos caracteres iniciales acertó quien esté probando.
-function tokenValido(recibido, esperado) {
-  if (typeof recibido !== "string") return false;
+// Comparación en tiempo constante: un `===` sobre un secreto filtra, por
+// lo que tarda, cuántos caracteres iniciales acertó quien esté probando.
+function coincide(recibido, esperado) {
+  if (typeof recibido !== "string" || !esperado) return false;
   const a = Buffer.from(recibido);
   const b = Buffer.from(esperado);
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-// Borra todos los puntajes. Es irreversible y la URL es pública, así que
-// exige un token: sin ADMIN_TOKEN definido no se borra nada, en vez de
-// quedar abierto a cualquiera que descubra el método DELETE.
-async function reiniciar(req, res) {
-  const esperado = process.env.ADMIN_TOKEN;
+function autorizado(req) {
+  return coincide(req.headers["x-admin-pin"], PIN_ESPERADO) ||
+         coincide(req.headers["x-admin-token"], TOKEN_ESPERADO);
+}
 
-  if (!esperado) {
-    return res.status(503).json({
-      error: "Defina la variable de entorno ADMIN_TOKEN para habilitar el reinicio del escalafón"
+const quien = req =>
+  (req.headers["x-forwarded-for"] ?? "").split(",")[0].trim() || "desconocido";
+
+const claveIntentos = ip => `dilema:intentos:${ip}`;
+
+// El contador vive en Redis y no en memoria: cada invocación de una
+// función serverless puede caer en una instancia distinta, así que un
+// contador local no contaría casi nada.
+async function intentosFallidos(ip) {
+  if (!hayRedis) return 0;
+  const db = await redis();
+  return Number(await db.get(claveIntentos(ip))) || 0;
+}
+
+async function anotarFallo(ip) {
+  if (!hayRedis) return;
+  const db = await redis();
+  const n = await db.incr(claveIntentos(ip));
+  if (n === 1) await db.expire(claveIntentos(ip), VENTANA_INTENTOS);
+}
+
+async function limpiarFallos(ip) {
+  if (!hayRedis) return;
+  const db = await redis();
+  await db.del(claveIntentos(ip));
+}
+
+// Borra todos los puntajes. Es irreversible y la URL es pública, de ahí
+// el PIN, el contador de intentos y el registro en los logs.
+async function reiniciar(req, res) {
+  const ip = quien(req);
+  res.setHeader("Cache-Control", "no-store");
+
+  if (await intentosFallidos(ip) >= MAX_INTENTOS) {
+    return res.status(429).json({
+      error: `Demasiados intentos fallidos. Espere ${Math.round(VENTANA_INTENTOS / 60)} minutos.`
     });
   }
-  if (!tokenValido(req.headers["x-admin-token"], esperado)) {
-    return res.status(401).json({ error: "Token de administración inválido" });
+
+  if (!autorizado(req)) {
+    await anotarFallo(ip);
+    console.warn(`Intento fallido de reiniciar el escalafón desde ${ip}`);
+    return res.status(401).json({ error: "PIN incorrecto" });
   }
 
   let borrados;
@@ -129,7 +177,7 @@ async function reiniciar(req, res) {
     memoria.length = 0;
   }
 
-  console.log(`Escalafón reiniciado: ${borrados} registro(s) borrado(s)`);
-  res.setHeader("Cache-Control", "no-store");
+  await limpiarFallos(ip);
+  console.log(`Escalafón reiniciado desde ${ip}: ${borrados} registro(s) borrado(s)`);
   return res.status(200).json({ ok: true, borrados });
 }
