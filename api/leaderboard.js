@@ -8,8 +8,13 @@ const TOPE = 10;
 // tiempo en una sola operación: más puntos sube, más segundos baja.
 const componer = (puntos, segundos) => puntos * 1_000_000 - segundos;
 
+// Los mismos nombres que acepta Redis.fromEnv(): segun como se aprovisione
+// la base, Vercel inyecta el par UPSTASH_REDIS_REST_* o el par KV_REST_API_*.
+// Si esta condicion fuera mas estricta que la libreria, el escalafon
+// respondería 503 con las credenciales puestas y funcionando.
 const hayRedis = Boolean(
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
+  (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
 );
 const enVercel = Boolean(process.env.VERCEL);
 

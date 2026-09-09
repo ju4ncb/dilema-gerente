@@ -1,18 +1,47 @@
-Coloque aqui los tres videos con estos nombres exactos:
+Cada escena vive en dos calidades. Los nombres son exactos:
 
-  escena1-2-llamada-oficina.mp4   Escenas 1 y 2 - La llamada y la propuesta
-  escena4a-aprobado.mp4           Escena 4A - Resultado aprobado
-  escena4b-reprobado.mp4          Escena 4B - Resultado reprobado
+  escena1-2-llamada-oficina.480.mp4    Escenas 1 y 2 - La llamada y la propuesta
+  escena1-2-llamada-oficina.1080.mp4
+  escena4a-aprobado.480.mp4            Escena 4A - Resultado aprobado
+  escena4a-aprobado.1080.mp4
+  escena4b-reprobado.480.mp4           Escena 4B - Resultado reprobado
+  escena4b-reprobado.1080.mp4
 
-Los nombres se configuran en CONFIG.videos dentro de app.js.
+La parte sin extension se configura en CONFIG.videos dentro de app.js, en
+el campo `base`. El sufijo .480 / .1080 lo pone reproducir() segun lo que
+decida elegirCalidad(): celular o conexion lenta reciben 480p, el resto
+1080p.
 
-PESO: el plan Hobby de Vercel rechaza el despliegue si los archivos
-subidos suman mas de 100 MB. Los tres videos actuales suman unos 68 MB,
-asi que caben, pero queda poco margen. Si agrega o reemplaza escenas,
-verifique el total antes de desplegar:
+En videos/originales/ estan los masters sin recomprimir. No se despliegan
+(.vercelignore) ni se versionan (.gitignore).
 
-  du -sh videos/          (Git Bash)
-  Get-ChildItem videos | Measure-Object Length -Sum   (PowerShell)
 
-Si se pasa de 100 MB, suba los videos a Cloudinary o Vercel Blob y
-reemplace las rutas de CONFIG.videos por las URL completas.
+REEMPLAZAR O AGREGAR UNA ESCENA
+-------------------------------
+Deje el master en videos/originales/ y genere las dos calidades. Las dos
+banderas que de verdad importan son -crf (calidad/peso) y +faststart, que
+mueve el indice del MP4 al principio del archivo: sin eso el navegador
+tiene que bajar el archivo entero antes de mostrar el primer cuadro.
+
+  ffmpeg -i videos/originales/NOMBRE.mp4 \
+    -vf "scale=854:480:flags=lanczos" \
+    -c:v libx264 -preset slow -profile:v main -level 3.1 -pix_fmt yuv420p \
+    -crf 27 -maxrate 800k -bufsize 1600k \
+    -c:a aac -b:a 64k -ac 2 -ar 44100 \
+    -movflags +faststart videos/NOMBRE.480.mp4
+
+  ffmpeg -i videos/originales/NOMBRE.mp4 \
+    -vf "scale=1920:1080:flags=lanczos" \
+    -c:v libx264 -preset slow -profile:v high -level 4.0 -pix_fmt yuv420p \
+    -crf 23 -maxrate 3000k -bufsize 6000k \
+    -c:a aac -b:a 96k -ac 2 -ar 48000 \
+    -movflags +faststart videos/NOMBRE.1080.mp4
+
+
+PESO
+----
+El plan Hobby de Vercel rechaza el despliegue si lo subido pasa de 100 MB.
+Con las dos calidades el total es de unos 20 MB, asi que hay margen de
+sobra. Para verificarlo:
+
+  du -sh videos/ --exclude=originales          (Git Bash)

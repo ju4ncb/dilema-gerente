@@ -79,7 +79,7 @@ styles.css            Identidad visual
 app.js                Máquina de estados, selección aleatoria, cronómetro
 preguntas.json        Banco de 30 casos
 api/leaderboard.js    Función serverless del escalafón
-videos/               Los tres videos (ver videos/LEEME.txt)
+videos/               Las escenas en 480p y 1080p (ver videos/LEEME.txt)
 vercel.json           Cabeceras de caché para el despliegue
 dev-server.mjs        Servidor local, sin dependencias
 ```
@@ -249,24 +249,51 @@ tampoco eso funciona aparece un «Toque para reproducir».
 
 ### Los archivos
 
-Son tres: el de apertura (escenas 1 y 2 juntas) y los dos desenlaces. Los
-nombres se configuran en `CONFIG.videos` dentro de `app.js`; ver también
-`videos/LEEME.txt`.
+Son tres escenas —la apertura, que junta las escenas 1 y 2, y los dos
+desenlaces— y cada una existe en dos calidades:
+
+| | 480p (celular) | 1080p (escritorio) |
+|---|---|---|
+| Apertura (35 s) | 1,7 MB | 9,4 MB |
+| Aprobado (10 s) | 0,6 MB | 3,3 MB |
+| Reprobado (10 s) | 0,5 MB | 3,6 MB |
+| **Por partida** | **~2,2 MB** | **~12,8 MB** |
+
+El nombre sin sufijo se configura en el campo `base` de `CONFIG.videos`
+dentro de `app.js`; el `.480` o `.1080` lo agrega `reproducir()`. Ver
+también `videos/LEEME.txt`, que trae los comandos de `ffmpeg` para
+regenerar las calidades si reemplaza una escena.
+
+Los masters sin recomprimir quedan en `videos/originales/`, fuera del
+despliegue (`.vercelignore`) y fuera del repositorio (`.gitignore`).
+
+**Cómo se elige la calidad.** `elegirCalidad()`, en `app.js`, decide una
+sola vez al cargar y no vuelve a revisar: cambiar de calidad a mitad de
+escena obligaría a recargar el archivo. Manda 480p si el navegador pide
+`Save-Data`, si la conexión es 2G o 3G, o si es un celular (`pointer:
+coarse` con pantalla menor a 1100 px) que no confirme tener holgura de
+sobra. Safari no expone `navigator.connection`, así que en iPhone gana
+siempre 480p — que es justo el caso que más importa cuidar.
+
+**Los archivos arrancan por el índice.** Todos se codifican con
+`-movflags +faststart`, que mueve la caja `moov` al principio. Sin eso el
+navegador tiene que bajar el archivo **entero** antes de dibujar el primer
+cuadro; con eso le bastan unos 40 KB. En la apertura la diferencia es de
+42,25 MB a 0,04 MB antes de que empiece a verse algo. Si regenera un
+video, no omita esa bandera.
 
 Sobre el plan gratuito de Vercel, con los pesos actuales:
 
 | Límite del plan Hobby | Valor | Situación |
 |---|---|---|
-| Archivos subidos por despliegue | 100 MB | 68 MB de video: **cabe**, con poco margen |
-| Transferencia de datos al mes | 100 GB | ~55 MB por partida completa, unas 1.800 partidas |
-| Tamaño máximo de respuesta cacheada en el CDN | 10 MB | los videos lo superan: se sirven desde el origen, no desde el borde |
+| Archivos subidos por despliegue | 100 MB | ~20 MB de video: **cabe de sobra** |
+| Transferencia de datos al mes | 100 GB | ~2,2 MB por partida en celular; decenas de miles de partidas |
+| Tamaño máximo de respuesta cacheada en el CDN | 10 MB | todos los archivos quedan por debajo: **se sirven desde el borde** |
 
-Es decir: funciona en el plan gratis tal como está. Las dos consecuencias
-prácticas son que cada reproducción viaja desde el origen (el primer
-arranque puede tardar un poco más) y que agregar una escena más lo
-empujaría por encima de los 100 MB. Si eso pasa, o si quiere que los
-videos se sirvan desde el CDN, súbalos a Cloudinary o Vercel Blob y ponga
-las URL completas en `CONFIG.videos`.
+Con `Cache-Control: immutable` ya puesto en `vercel.json`, cada archivo se
+cachea en el CDN la primera vez y el resto de la clase lo recibe desde el
+borde. Si más adelante agrega escenas y se acerca a los 100 MB, súbalas a
+Cloudinary o Vercel Blob y ponga las URL completas en `CONFIG.videos`.
 
 ## Notas para la presentación
 

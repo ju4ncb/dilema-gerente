@@ -588,6 +588,21 @@ body[data-vista="video"] #escenario {
 .boton-escena--omitir {
   color: var(--laton);
 }
+
+/* Sin video la escena es un rectángulo negro sin nada que mirar. El pie
+   deja de ser un crédito discreto y pasa a ser el mensaje de la pantalla,
+   y «Continuar» deja de competir con el botón de sonido. */
+.escena--sin-video .pie-video {
+  font-size: 1rem;
+  align-self: center;
+  text-align: center;
+  color: var(--texto);
+}
+
+.escena--sin-video .boton-escena--omitir {
+  background: rgba(201, 162, 39, 0.22);
+  border-color: var(--laton);
+}
 .boton-escena:active {
   background: rgba(201, 162, 39, 0.25);
 }

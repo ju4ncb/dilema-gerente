@@ -164,6 +164,7 @@ servidor.on("error", error => {
 });
 
 servidor.listen(PUERTO, () => {
-  const conRedis = process.env.UPSTASH_REDIS_REST_URL ? "Upstash Redis" : "memoria (se pierde al reiniciar)";
+  const hayRedis = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const conRedis = hayRedis ? "Upstash Redis" : "memoria (se pierde al reiniciar)";
   console.log(`\n  El Dilema del Gerente\n  http://localhost:${PUERTO}\n  escalafón: ${conRedis}\n`);
 });

@@ -1,19 +1,21 @@
 /* El Dilema del Gerente — lógica de la evaluación */
 
 const CONFIG = {
+  // Cada escena existe en dos calidades: `base` + "." + calidad + ".mp4".
+  // Ver elegirCalidad() para el criterio de selección.
   videos: {
     // Para poner subtítulos, agregue `subtitulos: "videos/apertura.vtt"`
     // a la escena: reproducir() engancha la pista sola si el campo existe.
     apertura: {
-      src: "videos/escena1-2-llamada-oficina.mp4",
+      base: "videos/escena1-2-llamada-oficina",
       pie: "Escenas 1 y 2 — La llamada y la propuesta",
     },
     aprobado: {
-      src: "videos/escena4a-aprobado.mp4",
+      base: "videos/escena4a-aprobado",
       pie: "Escena 4A — El veredicto",
     },
     reprobado: {
-      src: "videos/escena4b-reprobado.mp4",
+      base: "videos/escena4b-reprobado",
       pie: "Escena 4B — El veredicto",
     },
   },
@@ -349,6 +351,53 @@ function armarRonda(banco) {
 
 /* ── Cinemática ──────────────────────────────────────────── */
 
+// Cada escena viene en 480p (~400 kbps) y 1080p (~2,5 Mbps). La diferencia
+// para la apertura es de 1,7 MB contra 9,4 MB: en datos móviles eso es la
+// diferencia entre arrancar de una y mirar un rectángulo negro.
+//
+// La decisión se toma una sola vez, al cargar, y no se revisa: cambiar de
+// calidad a mitad de escena obligaría a recargar el archivo y se vería peor
+// que cualquiera de las dos opciones.
+function elegirCalidad() {
+  const conexion =
+    navigator.connection ?? navigator.mozConnection ?? navigator.webkitConnection;
+
+  // Save-Data es una petición explícita del usuario en la configuración del
+  // navegador. No se discute.
+  if (conexion?.saveData) return "480";
+
+  // 2G o 3G: bajar 9 MB tardaría bastante más que los 35 segundos que dura
+  // la escena.
+  if (["slow-2g", "2g", "3g"].includes(conexion?.effectiveType)) return "480";
+
+  // `pointer: coarse` distingue el celular mejor que el user agent, que
+  // cambia con cada versión de iOS. Se mira la pantalla física y no la
+  // ventana: un celular en horizontal sigue siendo un celular.
+  const ladoMayor = Math.max(screen.width, screen.height);
+  const esCelular =
+    matchMedia("(pointer: coarse)").matches && ladoMayor < 1100;
+
+  if (!esCelular) return "1080";
+
+  // Un celular en wifi rápida sí puede con 1080p, pero hay que confirmarlo:
+  // effectiveType "4g" abarca desde LTE flojo hasta fibra, así que además se
+  // exige holgura de sobra sobre los 2,5 Mbps del archivo. Safari no expone
+  // navigator.connection, así que en iPhone gana siempre 480p — que es
+  // justamente el caso que más importa cuidar.
+  return conexion?.effectiveType === "4g" && conexion.downlink >= 5
+    ? "1080"
+    : "480";
+}
+
+const CALIDAD = elegirCalidad();
+
+// Cuánto se espera antes de dar la escena por perdida. El arranque es
+// generoso porque incluye la negociación de la conexión en una red lenta;
+// el atasco lo es más aún porque a esas alturas ya se vio algo y cortar
+// una escena que iba a seguir sería peor que esperar de más.
+const ESPERA_ARRANQUE = 10000;
+const ESPERA_ATASCO = 15000;
+
 function sincronizarSonido() {
   const video = $("#reproductor");
   const boton = $("#btn-sonido");
@@ -380,12 +429,12 @@ async function arrancarVideo(video) {
 }
 
 function reproducir(clave, alTerminar) {
-  const { src, pie, subtitulos } = CONFIG.videos[clave];
+  const { base, pie, subtitulos } = CONFIG.videos[clave];
   const video = $("#reproductor");
   const botonPlay = $("#btn-reproducir");
 
   $("#pie-video").textContent = pie;
-  video.src = src;
+  video.src = `${base}.${CALIDAD}.mp4`;
   // Sin controles nativos: la escena no se adelanta ni se pausa, solo se
   // omite entera. El único mando es el de sonido.
   video.controls = false;
@@ -409,8 +458,14 @@ function reproducir(clave, alTerminar) {
   mostrar("video", "#escena");
 
   const seguir = () => {
+    clearTimeout(vigilante);
     video.onended = null;
     video.onerror = null;
+    video.onplaying = null;
+    video.onwaiting = null;
+    video.onstalled = null;
+    $("#escena").classList.remove("escena--sin-video");
+    $("#btn-saltar").textContent = "Omitir escena";
     $("#btn-saltar").onclick = null;
     $("#btn-sonido").onclick = null;
     botonPlay.onclick = null;
@@ -429,19 +484,54 @@ function reproducir(clave, alTerminar) {
   // Si el archivo no carga, ofrecer «toque para reproducir» es engañoso:
   // no hay nada que reproducir y solo queda omitir la escena.
   let roto = false;
-  video.onerror = () => {
-    roto = true;
-    $("#pie-video").textContent = `${pie} — el video no se pudo cargar`;
-    botonPlay.hidden = true;
+
+  // Un `error` solo llega si alguien rechaza la petición. Los filtros de
+  // red institucionales suelen hacer lo contrario: aceptan la conexión y
+  // se quedan callados. Entonces no hay error que escuchar y el <video>
+  // espera indefinidamente sobre un rectángulo negro. Contra eso lo único
+  // que sirve es un reloj.
+  let vigilante = null;
+  const vigilar = (ms, motivo) => {
+    clearTimeout(vigilante);
+    vigilante = setTimeout(() => rendirse(motivo), ms);
   };
+
+  const rendirse = (motivo) => {
+    if (roto) return;
+    roto = true;
+    clearTimeout(vigilante);
+    $("#pie-video").textContent = `${pie} — ${motivo}`;
+    botonPlay.hidden = true;
+    // La escena deja de ser el contenido y pasa a ser un trámite: el botón
+    // de omitir es ahora la única salida, así que se anuncia como tal.
+    $("#escena").classList.add("escena--sin-video");
+    $("#btn-saltar").textContent = "Continuar";
+  };
+
+  video.onerror = () => rendirse("el video no se pudo cargar");
+
+  // `playing` es la única señal de que hay imagen de verdad: `canplay` se
+  // dispara con lo que haya en el búfer y `play()` resuelve aunque después
+  // no llegue un solo cuadro más.
+  video.onplaying = () => clearTimeout(vigilante);
+  video.onwaiting = () =>
+    vigilar(ESPERA_ATASCO, "la conexión no da abasto con el video");
+  video.onstalled = () =>
+    vigilar(ESPERA_ATASCO, "la conexión no da abasto con el video");
+
+  vigilar(ESPERA_ARRANQUE, "el video no se pudo cargar");
 
   // Si el navegador bloquea la reproducción automática, se ofrece un botón
   // grande en vez de dejar un rectángulo negro sin explicación.
   arrancarVideo(video).then((arrancó) => {
     if (arrancó || roto) return;
+    // Esperando un toque no corre el reloj: el video puede estar
+    // perfectamente bien y ser la política de autoplay la que espera.
+    clearTimeout(vigilante);
     botonPlay.hidden = false;
     botonPlay.onclick = () => {
       botonPlay.hidden = true;
+      vigilar(ESPERA_ARRANQUE, "el video no se pudo cargar");
       arrancarVideo(video);
     };
   });
