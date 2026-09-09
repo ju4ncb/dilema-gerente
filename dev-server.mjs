@@ -22,6 +22,7 @@ const TIPOS = {
   ".json": "application/json; charset=utf-8",
   ".mp4": "video/mp4",
   ".webm": "video/webm",
+  ".mp3": "audio/mpeg",
   ".svg": "image/svg+xml",
   ".png": "image/png",
   ".jpg": "image/jpeg",

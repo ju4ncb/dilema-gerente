@@ -1,33 +1,41 @@
 :root {
-  --fondo:      #0E1B2A;
-  --superficie: #17293C;
-  --borde:      #294056;
+  --fondo: #0e1b2a;
+  --superficie: #17293c;
+  --borde: #294056;
   /* Borde de los controles: el anterior daba 1.6:1 contra el relleno y los
      botones de opción no se leían como botones. Este da 3.4:1. */
-  --borde-control: #56718C;
-  --texto:      #E9EEF3;
-  --tenue:      #93A7BB;
-  --laton:      #C9A227;
-  --plata:      #C6D2DE;
-  --bronce:     #CE9155;
+  --borde-control: #56718c;
+  --texto: #e9eef3;
+  --tenue: #93a7bb;
+  --laton: #c9a227;
+  --plata: #c6d2de;
+  --bronce: #ce9155;
   /* Verde y rojo aclarados: los originales daban 3.7:1 y 2.7:1 sobre la
      superficie. Estos dan 5.2:1 y 5.1:1, sobre el 4.5:1 que pide AA. */
-  --aprobado:   #4FA985;
-  --reprobado:  #E8776D;
-  --alerta:     #E8A33D;
+  --aprobado: #4fa985;
+  --reprobado: #e8776d;
+  --alerta: #e8a33d;
 
   --display: "Bitter", Georgia, serif;
   --ui: "IBM Plex Sans", system-ui, sans-serif;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 /* El `[hidden] { display: none }` del navegador lo gana cualquier regla de
    clase que fije `display`. Sin este refuerzo, `.destello { display: grid }`
    dejaba el aviso velando la pagina entera de forma permanente. */
-[hidden] { display: none !important; }
+[hidden] {
+  display: none !important;
+}
 
-html { background: #0A131E; }
+html {
+  background: #0a131e;
+}
 
 body {
   color: var(--texto);
@@ -48,18 +56,119 @@ body::before {
   pointer-events: none;
   background:
     /* halo de lámpara sobre el expediente */
-    radial-gradient(55rem 34rem at 50% -8%, rgba(201, 162, 39, 0.11), transparent 62%),
+    radial-gradient(
+      55rem 34rem at 50% -8%,
+      rgba(201, 162, 39, 0.11),
+      transparent 62%
+    ),
     /* viñeta que empuja la mirada al centro */
-    radial-gradient(120% 90% at 50% 45%, transparent 38%, rgba(0, 0, 0, 0.5) 100%),
+    radial-gradient(
+        120% 90% at 50% 45%,
+        transparent 38%,
+        rgba(0, 0, 0, 0.5) 100%
+      ),
     /* retícula tenue de plano técnico, acorde al expediente */
-    repeating-linear-gradient(0deg,  rgba(147, 167, 187, 0.045) 0 1px, transparent 1px 52px),
-    repeating-linear-gradient(90deg, rgba(147, 167, 187, 0.045) 0 1px, transparent 1px 52px),
-    linear-gradient(175deg, #122233 0%, #0E1B2A 45%, #091220 100%);
+    repeating-linear-gradient(
+        0deg,
+        rgba(147, 167, 187, 0.045) 0 1px,
+        transparent 1px 52px
+      ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(147, 167, 187, 0.045) 0 1px,
+      transparent 1px 52px
+    ),
+    linear-gradient(175deg, #122233 0%, #0e1b2a 45%, #091220 100%);
   transition: opacity 400ms ease;
 }
 
+/* Dumb dog, el perro tonto. Ancla al marco (no a la pantalla) para que
+   quede siempre en la esquina superior derecha de la tarjeta, sin
+   desbordar el ancho del viewport en móvil. Es un <button>: el perro
+   es un huevo de pascua que reacciona al pasar el mouse y al clic. */
+.dumb-dog {
+  z-index: 9999;
+  position: absolute;
+  top: 0;
+  right: -0.35rem;
+  /* -22% asoma al perro sobre el filo dorado sin que llegue a salirse
+     por encima de la página: el padding de #escenario en móvil (1rem)
+     es el límite. */
+  transform: translateY(-22%);
+  width: 72px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dumb-dog img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+.dumb-dog:hover,
+.dumb-dog:focus-visible {
+  transform: translateY(-22%) scale(1.14) rotate(-9deg);
+}
+
+.dumb-dog:active {
+  transform: translateY(-22%) scale(1.05) rotate(-4deg);
+}
+
+/* El perro fantasma: el mismo huevo de pascua, apenas una marca de agua
+   sobre el filo de la ficha. No se ilumina al pasar el mouse porque un
+   perro que se delata deja de ser un hallazgo; el confeti sí responde. */
+.dumb-dog--fantasma {
+  opacity: 0.04;
+}
+
+/* ── Confeti del perro ─────────────────────────────────── */
+
+.confeti-lluvia {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confeti-pieza {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 7px;
+  height: 12px;
+  border-radius: 1px;
+  animation-name: caer-confeti;
+  animation-timing-function: cubic-bezier(0.15, 0.65, 0.4, 1);
+  /* "both", no solo "forwards": con demora (animation-delay) y sin esto,
+     el navegador pinta la pieza en su posición base (0,0 = esquina
+     superior izquierda) mientras espera a que empiece la animación. */
+  animation-fill-mode: both;
+}
+
+@keyframes caer-confeti {
+  0% {
+    transform: translate(var(--x0), var(--y0)) rotate(0deg);
+    opacity: 1;
+  }
+  65% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--x1), var(--y1)) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+
 /* Durante las cinemáticas el fondo se apaga: la escena manda. */
-body[data-vista="video"]::before { opacity: 0.35; }
+body[data-vista="video"]::before {
+  opacity: 0.35;
+}
 
 #escenario {
   min-height: 100vh;
@@ -70,12 +179,15 @@ body[data-vista="video"]::before { opacity: 0.35; }
   padding: 1rem 0.75rem;
 }
 
-body[data-vista="video"] #escenario { padding: 0.5rem; }
+body[data-vista="video"] #escenario {
+  padding: 0.5rem;
+}
 
 /* Utilidad: visible solo para lectores de pantalla. */
 .solo-lector {
   position: absolute;
-  width: 1px; height: 1px;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
@@ -83,11 +195,18 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
 
 /* ── Pantallas ─────────────────────────────────────────── */
 
-.pantalla { display: none; width: 100%; }
+.pantalla {
+  position: relative;
+  display: none;
+  width: 100%;
+}
 
 /* `margin: auto 0` centra la tarjeta cuando sobra alto y la deja fluir
    desde arriba cuando no cabe, en vez de recortarla. */
-.pantalla.activa { display: block; margin: auto 0; }
+.pantalla.activa {
+  display: block;
+  margin: auto 0;
+}
 
 .marco {
   --pad-x: 1.15rem;
@@ -102,16 +221,21 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   padding: var(--pad-y) var(--pad-x);
   position: relative;
   /* Levanta la ficha del fondo en vez de dejarla pegada como una lámina. */
-  box-shadow: 0 28px 60px -34px rgba(0, 0, 0, 0.95),
-              0 1px 0 rgba(233, 238, 243, 0.04) inset;
+  box-shadow:
+    0 28px 60px -34px rgba(0, 0, 0, 0.95),
+    0 1px 0 rgba(233, 238, 243, 0.04) inset;
 }
 
-.marco--ancho { max-width: 46rem; }
+.marco--ancho {
+  max-width: 46rem;
+}
 
 /* En la pantalla de caso el filo superior de la tarjeta ES la barra de
    tiempo. Con el borde de latón puesto quedaban dos líneas doradas: una
    fija y otra vaciándose, y la fija hacía dudar de la que sí se mueve. */
-.marco--caso { border-top: 0; }
+.marco--caso {
+  border-top: 0;
+}
 
 /* ── Tipografía compartida ─────────────────────────────── */
 
@@ -122,6 +246,12 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   margin-bottom: 1.25rem;
 }
 
+/* En móvil el perro cuelga sobre la esquina y le come el renglón al
+   expediente si no le deja aire a la derecha. */
+.pantalla[data-pantalla="inicio"] .expediente {
+  padding-right: 4.75rem;
+}
+
 .titulo {
   font-family: var(--display);
   font-weight: 700;
@@ -129,6 +259,10 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   line-height: 1.05;
   letter-spacing: -0.02em;
   margin-bottom: 1rem;
+}
+
+.titulo-acento {
+  color: var(--laton);
 }
 
 .titulo:focus-visible,
@@ -158,7 +292,9 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
 
 /* ── Formulario de inicio ──────────────────────────────── */
 
-.campo { margin-bottom: 1.25rem; }
+.campo {
+  margin-bottom: 1.25rem;
+}
 
 .campo label {
   display: block;
@@ -296,12 +432,18 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   color: var(--reprobado);
 }
 
-.fila-pin .boton-secundario:active { background: rgba(232, 119, 109, 0.18); }
-.fila-pin .boton-tenue { flex: 0 0 auto; padding: 0.7rem 0.4rem; }
+.fila-pin .boton-secundario:active {
+  background: rgba(232, 119, 109, 0.18);
+}
+.fila-pin .boton-tenue {
+  flex: 0 0 auto;
+  padding: 0.7rem 0.4rem;
+}
 
 /* ── Botones ───────────────────────────────────────────── */
 
-.boton-principal, .boton-secundario {
+.boton-principal,
+.boton-secundario {
   font-family: var(--ui);
   font-size: 1rem;
   font-weight: 600;
@@ -311,7 +453,9 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   cursor: pointer;
   border-radius: 0;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
 }
 
 .boton-principal {
@@ -330,8 +474,12 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   cursor: progress;
 }
 
-.boton-principal:active:not(:disabled) { background: #B08D1E; }
-.boton-secundario:active { background: rgba(201, 162, 39, 0.22); }
+.boton-principal:active:not(:disabled) {
+  background: #b08d1e;
+}
+.boton-secundario:active {
+  background: rgba(201, 162, 39, 0.22);
+}
 
 .boton-principal:focus-visible,
 .boton-secundario:focus-visible,
@@ -360,8 +508,14 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
 }
 
 @keyframes abrirEscena {
-  from { transform: scale(0.84); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.84);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .escena video {
@@ -382,11 +536,18 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   gap: 1rem;
   padding: 0.85rem 0.9rem;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent 24%,
-                                      transparent 66%, rgba(0, 0, 0, 0.72));
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.6),
+    transparent 24%,
+    transparent 66%,
+    rgba(0, 0, 0, 0.72)
+  );
 }
 
-.escena-capa > * { pointer-events: auto; }
+.escena-capa > * {
+  pointer-events: auto;
+}
 
 .escena .pie-video {
   font-size: 0.82rem;
@@ -419,11 +580,17 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   border-radius: 0;
   -webkit-tap-highlight-color: transparent;
   backdrop-filter: blur(6px);
-  transition: background-color 140ms ease, border-color 140ms ease;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
 }
 
-.boton-escena--omitir { color: var(--laton); }
-.boton-escena:active { background: rgba(201, 162, 39, 0.25); }
+.boton-escena--omitir {
+  color: var(--laton);
+}
+.boton-escena:active {
+  background: rgba(201, 162, 39, 0.25);
+}
 
 /* Bocina dibujada con clip-path: evita depender de un emoji que cada
    sistema pinta distinto. */
@@ -435,7 +602,9 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   clip-path: polygon(0 34%, 30% 34%, 62% 6%, 62% 94%, 30% 66%, 0 66%);
 }
 
-.boton-escena.silenciado .icono-sonido { opacity: 0.45; }
+.boton-escena.silenciado .icono-sonido {
+  opacity: 0.45;
+}
 
 .boton-reproducir {
   position: absolute;
@@ -482,8 +651,12 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   animation: golpe 520ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
 }
 
-.destello.alerta .destello-caja { color: var(--reprobado); }
-.destello.exito  .destello-caja { color: var(--aprobado); }
+.destello.alerta .destello-caja {
+  color: var(--reprobado);
+}
+.destello.exito .destello-caja {
+  color: var(--aprobado);
+}
 
 /* La cuenta 1-2-3: un solo numero, grande y cuadrado. */
 .destello.cuenta .destello-caja {
@@ -513,12 +686,28 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   animation-timing-function: cubic-bezier(0.2, 1.2, 0.4, 1);
 }
 
-@keyframes velo { from { opacity: 0; } to { opacity: 1; } }
+@keyframes velo {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 
 @keyframes golpe {
-  from { transform: scale(0.55) rotate(-4deg); opacity: 0; }
-  60%  { transform: scale(1.07) rotate(-1deg); opacity: 1; }
-  to   { transform: scale(1) rotate(-1.5deg); opacity: 1; }
+  from {
+    transform: scale(0.55) rotate(-4deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.07) rotate(-1deg);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1) rotate(-1.5deg);
+    opacity: 1;
+  }
 }
 
 /* ── Caso ──────────────────────────────────────────────── */
@@ -547,11 +736,17 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   height: 100%;
   width: 100%;
   background: var(--laton);
-  transition: width 200ms linear, background-color 300ms ease;
+  transition:
+    width 200ms linear,
+    background-color 300ms ease;
 }
 
-.barra-tiempo.alerta  { background: var(--alerta); }
-.barra-tiempo.critico { background: var(--reprobado); }
+.barra-tiempo.alerta {
+  background: var(--alerta);
+}
+.barra-tiempo.critico {
+  background: var(--reprobado);
+}
 
 .cabecera-caso {
   display: flex;
@@ -564,11 +759,21 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
 
 /* min-width:0 deja que la fase se encoja en vez de empujar al reloj
    fuera de la tarjeta en pantallas angostas. */
-.cabecera-caso__izq { min-width: 0; }
-.cabecera-caso__der { text-align: right; flex: 0 0 auto; }
+.cabecera-caso__izq {
+  min-width: 0;
+}
+.cabecera-caso__der {
+  text-align: right;
+  flex: 0 0 auto;
+}
 
-.contador { font-weight: 500; color: var(--texto); }
-.fase { margin-top: 0.15rem; }
+.contador {
+  font-weight: 500;
+  color: var(--texto);
+}
+.fase {
+  margin-top: 0.15rem;
+}
 
 .reloj-caso {
   font-family: var(--display);
@@ -579,13 +784,20 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   color: var(--laton);
 }
 
-.reloj-caso.alerta  { color: var(--alerta); }
-.reloj-caso.critico { color: var(--reprobado); animation: latido 1s ease-in-out infinite; }
+.reloj-caso.alerta {
+  color: var(--alerta);
+}
+.reloj-caso.critico {
+  color: var(--reprobado);
+  animation: latido 1s ease-in-out infinite;
+}
 
 /* El parpadeo llama la atención sin llegar a borrar el número: bajar más
    la opacidad vuelve ilegible el dato justo cuando más importa. */
 @keyframes latido {
-  50% { opacity: 0.72; }
+  50% {
+    opacity: 0.72;
+  }
 }
 
 .reloj-total {
@@ -616,7 +828,11 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   margin-bottom: 1.5rem;
 }
 
-.opciones { list-style: none; display: grid; gap: 0.6rem; }
+.opciones {
+  list-style: none;
+  display: grid;
+  gap: 0.6rem;
+}
 
 .opcion {
   display: flex;
@@ -636,7 +852,9 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   cursor: pointer;
   border-radius: 0;
   -webkit-tap-highlight-color: transparent;
-  transition: border-color 120ms ease, background-color 120ms ease;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
 }
 
 .opcion:focus-visible {
@@ -644,9 +862,14 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   outline-offset: 1px;
 }
 
-.opcion:active { background: #16273A; }
+.opcion:active {
+  background: #16273a;
+}
 
-.opcion[disabled] { cursor: default; opacity: 0.5; }
+.opcion[disabled] {
+  cursor: default;
+  opacity: 0.5;
+}
 
 .opcion.elegida {
   border-color: var(--laton);
@@ -662,7 +885,9 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   font-weight: 600;
 }
 
-.opcion-texto { flex: 1 1 auto; }
+.opcion-texto {
+  flex: 1 1 auto;
+}
 
 .ayuda {
   font-size: 0.82rem;
@@ -685,10 +910,15 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   letter-spacing: 0.04em;
 }
 
-.sello.aprobado  { color: var(--aprobado); }
-.sello.reprobado { color: var(--reprobado); }
+.sello.aprobado {
+  color: var(--aprobado);
+}
+.sello.reprobado {
+  color: var(--reprobado);
+}
 
-.titulo-veredicto, .titulo-ranking {
+.titulo-veredicto,
+.titulo-ranking {
   font-family: var(--display);
   font-weight: 700;
   font-size: clamp(1.6rem, 6.5vw, 2.6rem);
@@ -724,9 +954,14 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   font-variant-numeric: tabular-nums;
 }
 
-.cifra span { font-size: 0.8rem; color: var(--tenue); }
+.cifra span {
+  font-size: 0.8rem;
+  color: var(--tenue);
+}
 
-.desglose { margin-bottom: 1.75rem; }
+.desglose {
+  margin-bottom: 1.75rem;
+}
 
 .desglose summary {
   cursor: pointer;
@@ -750,8 +985,12 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   font-size: 0.9rem;
 }
 
-.desglose li.acierto { border-left-color: var(--aprobado); }
-.desglose li.fallo   { border-left-color: var(--alerta); }
+.desglose li.acierto {
+  border-left-color: var(--aprobado);
+}
+.desglose li.fallo {
+  border-left-color: var(--alerta);
+}
 
 .desglose-rotulo {
   color: var(--tenue);
@@ -770,8 +1009,15 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   margin-bottom: 0.6rem;
 }
 
-.desglose-suya, .desglose-ideal { color: var(--tenue); margin-top: 0.35rem; }
-.desglose-etiqueta { color: var(--texto); font-weight: 600; }
+.desglose-suya,
+.desglose-ideal {
+  color: var(--tenue);
+  margin-top: 0.35rem;
+}
+.desglose-etiqueta {
+  color: var(--texto);
+  font-weight: 600;
+}
 .desglose-puntos {
   color: var(--laton);
   font-weight: 600;
@@ -811,7 +1057,9 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   font-variant-numeric: tabular-nums;
 }
 
-.puesto-datos { min-width: 0; }
+.puesto-datos {
+  min-width: 0;
+}
 
 .puesto-nombre {
   font-weight: 600;
@@ -834,7 +1082,9 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   background: var(--borde-control);
 }
 
-.puesto-marcas { text-align: right; }
+.puesto-marcas {
+  text-align: right;
+}
 
 .puesto-marcas strong {
   display: block;
@@ -851,24 +1101,46 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   font-variant-numeric: tabular-nums;
 }
 
-.podio-1 { border-left-color: var(--laton); }
-.podio-1 .puesto-num, .podio-1 .puesto-marcas strong { color: var(--laton); }
-.podio-1 .medidor i { background: var(--laton); }
+.podio-1 {
+  border-left-color: var(--laton);
+}
+.podio-1 .puesto-num,
+.podio-1 .puesto-marcas strong {
+  color: var(--laton);
+}
+.podio-1 .medidor i {
+  background: var(--laton);
+}
 
-.podio-2 { border-left-color: var(--plata); }
-.podio-2 .puesto-num, .podio-2 .puesto-marcas strong { color: var(--plata); }
-.podio-2 .medidor i { background: var(--plata); }
+.podio-2 {
+  border-left-color: var(--plata);
+}
+.podio-2 .puesto-num,
+.podio-2 .puesto-marcas strong {
+  color: var(--plata);
+}
+.podio-2 .medidor i {
+  background: var(--plata);
+}
 
-.podio-3 { border-left-color: var(--bronce); }
-.podio-3 .puesto-num, .podio-3 .puesto-marcas strong { color: var(--bronce); }
-.podio-3 .medidor i { background: var(--bronce); }
+.podio-3 {
+  border-left-color: var(--bronce);
+}
+.podio-3 .puesto-num,
+.podio-3 .puesto-marcas strong {
+  color: var(--bronce);
+}
+.podio-3 .medidor i {
+  background: var(--bronce);
+}
 
 .puesto.propio {
   background: rgba(201, 162, 39, 0.12);
   border-color: var(--laton);
 }
 
-.cargando, .vacio {
+.cargando,
+.vacio {
   color: var(--tenue);
   padding: 1.75rem 0;
   border-top: 1px solid var(--borde);
@@ -879,30 +1151,79 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
 /* ── Pantallas medianas y grandes ──────────────────────── */
 
 @media (min-width: 40rem) {
-  #escenario { padding: 2rem 1.25rem; }
-  body[data-vista="video"] #escenario { padding: 1.25rem; }
+  #escenario {
+    padding: 2rem 1.25rem;
+  }
+  body[data-vista="video"] #escenario {
+    padding: 1.25rem;
+  }
 
-  .marco { --pad-x: 2.5rem; --pad-y: 2.5rem; }
+  .marco {
+    --pad-x: 2.5rem;
+    --pad-y: 2.5rem;
+  }
 
-  .expediente { margin-bottom: 1.5rem; }
-  .entrada, .dictamen { margin-bottom: 2rem; }
+  .dumb-dog {
+    right: 0.25rem;
+    width: 128px;
+  }
 
-  .escena-capa { padding: 1.1rem 1.25rem; }
-  .escena .pie-video { font-size: 0.9rem; }
-  .boton-escena { font-size: 0.92rem; padding: 0.6rem 1.1rem; }
+  .expediente {
+    margin-bottom: 1.5rem;
+  }
 
-  .cabecera-caso { font-size: 0.85rem; align-items: baseline; }
-  .reloj-caso { font-size: 1.9rem; }
+  .pantalla[data-pantalla="inicio"] .expediente {
+    padding-right: 0;
+  }
+  .entrada,
+  .dictamen {
+    margin-bottom: 2rem;
+  }
 
-  .opciones { gap: 0.75rem; }
-  .opcion { padding: 1rem 1.15rem; gap: 1rem; }
+  .escena-capa {
+    padding: 1.1rem 1.25rem;
+  }
+  .escena .pie-video {
+    font-size: 0.9rem;
+  }
+  .boton-escena {
+    font-size: 0.92rem;
+    padding: 0.6rem 1.1rem;
+  }
 
-  .cifras { gap: 2.5rem; padding: 1.5rem 0; }
+  .cabecera-caso {
+    font-size: 0.85rem;
+    align-items: baseline;
+  }
+  .reloj-caso {
+    font-size: 1.9rem;
+  }
 
-  .puesto { grid-template-columns: 2.25rem minmax(0, 1fr) auto; padding: 0.85rem 1rem; }
-  .puesto-nombre { font-size: 1rem; }
+  .opciones {
+    gap: 0.75rem;
+  }
+  .opcion {
+    padding: 1rem 1.15rem;
+    gap: 1rem;
+  }
 
-  .boton-secundario, .boton-principal { padding: 0.9rem 1.75rem; }
+  .cifras {
+    gap: 2.5rem;
+    padding: 1.5rem 0;
+  }
+
+  .puesto {
+    grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+    padding: 0.85rem 1rem;
+  }
+  .puesto-nombre {
+    font-size: 1rem;
+  }
+
+  .boton-secundario,
+  .boton-principal {
+    padding: 0.9rem 1.75rem;
+  }
 
   /* Con ancho de sobra el sello vuelve a ser un estampado sobre la ficha. */
   .sello {
@@ -919,11 +1240,19 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
   }
 
   @keyframes estampar {
-    from { opacity: 0; transform: rotate(-11deg) scale(1.6); }
-    to   { opacity: 0.9; transform: rotate(-11deg) scale(1); }
+    from {
+      opacity: 0;
+      transform: rotate(-11deg) scale(1.6);
+    }
+    to {
+      opacity: 0.9;
+      transform: rotate(-11deg) scale(1);
+    }
   }
 
-  .titulo-veredicto { max-width: calc(100% - 9rem); }
+  .titulo-veredicto {
+    max-width: calc(100% - 9rem);
+  }
 }
 
 /* ── Hover solo donde hay puntero ──────────────────────── */
@@ -931,14 +1260,31 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
 /* Sin este guardia, en pantallas táctiles el estado :hover se queda
    pegado en el último botón tocado. */
 @media (hover: hover) and (pointer: fine) {
-  .boton-principal:hover:not(:disabled) { background: #DDB63A; }
-  .boton-secundario:hover { background: rgba(201, 162, 39, 0.12); }
-  .boton-escena:hover { background: rgba(201, 162, 39, 0.2); border-color: var(--laton); }
-  .boton-reproducir:hover { background: rgba(23, 41, 60, 0.96); }
-  .opcion:hover:not([disabled]) { border-color: var(--laton); }
-  .desglose summary:hover { color: #DDB63A; }
-  .boton-tenue:hover { color: var(--texto); }
-  .fila-pin .boton-secundario:hover { background: rgba(232, 119, 109, 0.14); }
+  .boton-principal:hover:not(:disabled) {
+    background: #ddb63a;
+  }
+  .boton-secundario:hover {
+    background: rgba(201, 162, 39, 0.12);
+  }
+  .boton-escena:hover {
+    background: rgba(201, 162, 39, 0.2);
+    border-color: var(--laton);
+  }
+  .boton-reproducir:hover {
+    background: rgba(23, 41, 60, 0.96);
+  }
+  .opcion:hover:not([disabled]) {
+    border-color: var(--laton);
+  }
+  .desglose summary:hover {
+    color: #ddb63a;
+  }
+  .boton-tenue:hover {
+    color: var(--texto);
+  }
+  .fila-pin .boton-secundario:hover {
+    background: rgba(232, 119, 109, 0.14);
+  }
 }
 
 /* ── Movimiento reducido ───────────────────────────────── */
@@ -949,10 +1295,35 @@ body[data-vista="video"] #escenario { padding: 0.5rem; }
     opacity: 0.9;
     transform: rotate(-11deg);
   }
-  .barra-avance, .barra-tiempo { transition: none; }
-  .reloj-caso.critico { animation: none; }
-  .escena { animation: none; }
-  .destello, .destello-caja { animation: none; }
-  .destello-caja { transform: none; }
-  * { scroll-behavior: auto; }
+  .barra-avance,
+  .barra-tiempo {
+    transition: none;
+  }
+  .reloj-caso.critico {
+    animation: none;
+  }
+  .escena {
+    animation: none;
+  }
+  .destello,
+  .destello-caja {
+    animation: none;
+  }
+  .destello-caja {
+    transform: none;
+  }
+  .dumb-dog {
+    transition: none;
+  }
+  .dumb-dog:hover,
+  .dumb-dog:focus-visible,
+  .dumb-dog:active {
+    transform: translateY(-22%);
+  }
+  .confeti-pieza {
+    display: none;
+  }
+  * {
+    scroll-behavior: auto;
+  }
 }

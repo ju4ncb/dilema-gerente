@@ -4,9 +4,18 @@ const CONFIG = {
   videos: {
     // Para poner subtítulos, agregue `subtitulos: "videos/apertura.vtt"`
     // a la escena: reproducir() engancha la pista sola si el campo existe.
-    apertura:  { src: "videos/escena1-2-llamada-oficina.mp4", pie: "Escenas 1 y 2 — La llamada y la propuesta" },
-    aprobado:  { src: "videos/escena4a-aprobado.mp4",         pie: "Escena 4A — El veredicto" },
-    reprobado: { src: "videos/escena4b-reprobado.mp4",        pie: "Escena 4B — El veredicto" }
+    apertura: {
+      src: "videos/escena1-2-llamada-oficina.mp4",
+      pie: "Escenas 1 y 2 — La llamada y la propuesta",
+    },
+    aprobado: {
+      src: "videos/escena4a-aprobado.mp4",
+      pie: "Escena 4A — El veredicto",
+    },
+    reprobado: {
+      src: "videos/escena4b-reprobado.mp4",
+      pie: "Escena 4B — El veredicto",
+    },
   },
   estructura: { facil: 3, media: 2, dificil: 1 },
   // Segundos por caso. Decidir a tiempo también es parte del criterio:
@@ -17,13 +26,15 @@ const CONFIG = {
   api: "/api/leaderboard",
   claveRegistro: "dilema:candidato",
   topeInicio: 5,
-  topeRanking: 10
+  topeRanking: 10,
+  // Uno de cada N casos muestra el perro fantasma en la esquina.
+  probabilidadPerro: 25,
 };
 
 const FASES = {
-  facil:   "Fase 1 — Criterio básico",
-  media:   "Fase 2 — Decisiones en tensión",
-  dificil: "Fase 3 — El dilema"
+  facil: "Fase 1 — Criterio básico",
+  media: "Fase 2 — Decisiones en tensión",
+  dificil: "Fase 3 — El dilema",
 };
 
 // Umbrales de aviso de la cuenta regresiva, en segundos.
@@ -40,7 +51,7 @@ const ALIENTOS = [
   "Buen ritmo",
   "Concentración",
   "Sin aflojar",
-  "Ahí viene otra"
+  "Ahí viene otra",
 ];
 
 const estado = {
@@ -59,15 +70,15 @@ const estado = {
   // Evita que un doble toque —o un clic que llega junto con el cero del
   // reloj— registre dos respuestas para el mismo caso.
   bloqueado: false,
-  sonido: true
+  sonido: true,
 };
 
 // Cronómetro total, acumulado por tramos para poder pausarlo: los avisos
 // entre casos no deben sumar al tiempo que decide el desempate.
 const cronometro = { acumulado: 0, desde: null, tick: null };
 
-const $ = sel => document.querySelector(sel);
-const dormir = ms => new Promise(r => setTimeout(r, ms));
+const $ = (sel) => document.querySelector(sel);
+const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ── Utilidades ──────────────────────────────────────────── */
 
@@ -101,7 +112,7 @@ function formatearTiempo(segundos) {
 // no se enteraba de nada. El dato en <body> deja que el CSS ajuste el
 // fondo y los márgenes según la pantalla en curso.
 function mostrar(nombrePantalla, selectorFoco) {
-  document.querySelectorAll(".pantalla").forEach(p => {
+  document.querySelectorAll(".pantalla").forEach((p) => {
     p.classList.toggle("activa", p.dataset.pantalla === nombrePantalla);
   });
   // `vista` y no `pantalla`: si se repite el nombre del atributo de las
@@ -115,7 +126,8 @@ function anunciar(texto) {
   $("#anuncio").textContent = texto;
 }
 
-const sinMovimiento = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const sinMovimiento = () =>
+  matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ── Cronómetro total ────────────────────────────────────── */
 
@@ -206,8 +218,11 @@ function siguienteAliento() {
 // arranque es inmediato y, sobre todo, reproducir() sigue colgando del
 // toque del usuario: iOS bloquea el play si media un `await`.
 const bancoPromesa = fetch("preguntas.json")
-  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-  .then(datos => (estado.banco = datos));
+  .then((r) => {
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  })
+  .then((datos) => (estado.banco = datos));
 
 function prepararInicio() {
   const registrado = localStorage.getItem(CONFIG.claveRegistro);
@@ -219,12 +234,62 @@ function prepararInicio() {
 
   // En un celular no hay teclas 1–5 que ofrecer.
   if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
-    $("#ayuda-caso").textContent = "Elija con las teclas 1–5 o haga clic en una opción.";
+    $("#ayuda-caso").textContent =
+      "Elija con las teclas 1–5 o haga clic en una opción.";
     $("#nombre").focus();
   }
 
   cargarEscalafonInicio();
   prepararReinicio();
+  prepararPerro();
+}
+
+// El perro de la esquina no tiene nada que ver con la evaluación: es un
+// huevo de pascua. Un clic lo premia con confeti y su propio sonido.
+function prepararPerro() {
+  document.querySelectorAll(".dumb-dog").forEach((perro) => {
+    perro.onclick = () => {
+      lanzarConfeti(perro);
+      const sfx = new Audio("confetti.mp3");
+      sfx.volume = 0.67;
+      sfx.play().catch(() => {});
+    };
+  });
+}
+
+// El perro solo se asoma en uno de cada veinticinco casos: si saliera
+// siempre dejaría de ser un hallazgo y pasaría a ser decorado.
+function sortearPerroDelCaso() {
+  const perro = $("#dumb-dog-caso");
+  if (!perro) return;
+  perro.hidden = Math.random() >= 1 / CONFIG.probabilidadPerro;
+}
+
+function lanzarConfeti(origen) {
+  const capa = $("#confeti-lluvia");
+  if (!capa || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const rect = origen.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const colores = ["#c9a227", "#c6d2de", "#ce9155", "#4fa985", "#e8776d"];
+
+  for (let i = 0; i < 26; i++) {
+    const pieza = document.createElement("i");
+    pieza.className = "confeti-pieza";
+    const dx = (Math.random() - 0.5) * 90;
+    const caida = 220 + Math.random() * 220;
+    pieza.style.setProperty("--x0", `${cx + (Math.random() - 0.5) * 20}px`);
+    pieza.style.setProperty("--y0", `${cy}px`);
+    pieza.style.setProperty("--x1", `${cx + dx}px`);
+    pieza.style.setProperty("--y1", `${cy + caida}px`);
+    pieza.style.setProperty("--rot", `${180 + Math.random() * 540}deg`);
+    pieza.style.animationDuration = `${900 + Math.random() * 500}ms`;
+    pieza.style.animationDelay = `${Math.random() * 220}ms`;
+    pieza.style.background = colores[i % colores.length];
+    pieza.addEventListener("animationend", () => pieza.remove());
+    capa.appendChild(pieza);
+  }
 }
 
 function iniciar() {
@@ -252,7 +317,8 @@ function iniciar() {
   bancoPromesa.then(arrancarPartida).catch(() => {
     boton.disabled = false;
     boton.textContent = "Presentarse a la evaluación";
-    error.textContent = "No se pudo cargar el banco de casos. Revise que preguntas.json esté publicado.";
+    error.textContent =
+      "No se pudo cargar el banco de casos. Revise que preguntas.json esté publicado.";
     error.hidden = false;
   });
 }
@@ -272,9 +338,11 @@ function arrancarPartida() {
 function armarRonda(banco) {
   const ronda = [];
   for (const [nivel, cantidad] of Object.entries(CONFIG.estructura)) {
-    barajar(banco[nivel]).slice(0, cantidad).forEach(caso => {
-      ronda.push({ ...caso, nivel, opciones: barajar(caso.opciones) });
-    });
+    barajar(banco[nivel])
+      .slice(0, cantidad)
+      .forEach((caso) => {
+        ronda.push({ ...caso, nivel, opciones: barajar(caso.opciones) });
+      });
   }
   return ronda;
 }
@@ -287,7 +355,9 @@ function sincronizarSonido() {
   video.muted = !estado.sonido;
   boton.setAttribute("aria-pressed", String(!estado.sonido));
   boton.classList.toggle("silenciado", !estado.sonido);
-  $("#btn-sonido-texto").textContent = estado.sonido ? "Silenciar" : "Activar sonido";
+  $("#btn-sonido-texto").textContent = estado.sonido
+    ? "Silenciar"
+    : "Activar sonido";
 }
 
 // Los navegadores bloquean el autoplay con sonido. Antes de rendirse y
@@ -323,7 +393,7 @@ function reproducir(clave, alTerminar) {
   botonPlay.hidden = true;
   sincronizarSonido();
 
-  video.querySelectorAll("track").forEach(t => t.remove());
+  video.querySelectorAll("track").forEach((t) => t.remove());
   if (subtitulos) {
     const pista = document.createElement("track");
     pista.kind = "captions";
@@ -367,7 +437,7 @@ function reproducir(clave, alTerminar) {
 
   // Si el navegador bloquea la reproducción automática, se ofrece un botón
   // grande en vez de dejar un rectángulo negro sin explicación.
-  arrancarVideo(video).then(arrancó => {
+  arrancarVideo(video).then((arrancó) => {
     if (arrancó || roto) return;
     botonPlay.hidden = false;
     botonPlay.onclick = () => {
@@ -426,8 +496,12 @@ function pintarCaso() {
     lista.appendChild(li);
   });
 
+  sortearPerroDelCaso();
+
   mostrar("caso", "#enunciado");
-  anunciar(`Caso ${estado.indice + 1} de ${total}. ${FASES[caso.nivel]}. Tiene ${enPalabras(CONFIG.limites[caso.nivel])}.`);
+  anunciar(
+    `Caso ${estado.indice + 1} de ${total}. ${FASES[caso.nivel]}. Tiene ${enPalabras(CONFIG.limites[caso.nivel])}.`,
+  );
 
   arrancarRelojCaso(CONFIG.limites[caso.nivel]);
 }
@@ -488,7 +562,7 @@ async function agotarTiempo() {
   detenerRelojCaso();
 
   const caso = estado.casos[estado.indice];
-  document.querySelectorAll(".opcion").forEach(b => (b.disabled = true));
+  document.querySelectorAll(".opcion").forEach((b) => (b.disabled = true));
 
   registrar(caso, null, 0);
   // Este aviso ya hace de transición: no se le encima uno de ánimo.
@@ -513,7 +587,7 @@ function responder(indiceOpcion) {
   const elegida = caso.opciones[indiceOpcion];
 
   const botones = document.querySelectorAll(".opcion");
-  botones.forEach(b => (b.disabled = true));
+  botones.forEach((b) => (b.disabled = true));
   botones[indiceOpcion].classList.add("elegida");
 
   registrar(caso, elegida.texto, elegida.puntos);
@@ -528,7 +602,7 @@ function registrar(caso, textoElegido, puntos) {
     elegida: textoElegido,
     puntos,
     maximo: mejor.puntos,
-    mejor: mejor.texto
+    mejor: mejor.texto,
   });
 }
 
@@ -614,7 +688,8 @@ function pintarDesglose() {
     suya.className = "desglose-suya";
     const etiqueta = document.createElement("span");
     etiqueta.className = "desglose-etiqueta";
-    etiqueta.textContent = r.elegida === null ? "Sin responder:" : "Su respuesta:";
+    etiqueta.textContent =
+      r.elegida === null ? "Sin responder:" : "Su respuesta:";
     const texto = document.createElement("span");
     texto.textContent = ` ${r.elegida ?? "se agotó el tiempo del caso"}`;
     suya.append(etiqueta, texto);
@@ -648,7 +723,11 @@ async function enviarPuntaje(puntos) {
     await fetch(CONFIG.api, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre: estado.nombre, puntos, segundos: estado.segundos })
+      body: JSON.stringify({
+        nombre: estado.nombre,
+        puntos,
+        segundos: estado.segundos,
+      }),
     });
   } catch {
     // Sin conexión al escalafón la evaluación sigue siendo válida.
@@ -672,7 +751,8 @@ function construirEscalafon(filas, tope) {
     const li = document.createElement("li");
     li.className = "puesto";
     if (i < 3) li.classList.add(`podio-${i + 1}`);
-    if (estado.nombre && fila.nombre === estado.nombre) li.classList.add("propio");
+    if (estado.nombre && fila.nombre === estado.nombre)
+      li.classList.add("propio");
 
     const num = document.createElement("span");
     num.className = "puesto-num";
@@ -767,7 +847,7 @@ async function reiniciarEscalafon(evento) {
     // no hay nada que comparar: el navegador no guarda el secreto.
     respuesta = await fetch(CONFIG.api, {
       method: "DELETE",
-      headers: { "x-admin-pin": pin }
+      headers: { "x-admin-pin": pin },
     });
   } catch {
     error.textContent = "No se pudo contactar al servidor.";
@@ -791,7 +871,11 @@ async function reiniciarEscalafon(evento) {
   const { borrados } = await respuesta.json().catch(() => ({ borrados: 0 }));
   cerrarFormaPin();
   await cargarEscalafonInicio();
-  await aviso(`Escalafón reiniciado · ${borrados} registro${borrados === 1 ? "" : "s"}`, "exito", 1400);
+  await aviso(
+    `Escalafón reiniciado · ${borrados} registro${borrados === 1 ? "" : "s"}`,
+    "exito",
+    1400,
+  );
   $("#btn-abrir-pin").focus();
 }
 
@@ -824,8 +908,7 @@ async function pintarRanking() {
   try {
     filas = await consultarEscalafon();
   } catch {
-    contenedor.innerHTML =
-      `<p class="vacio">El escalafón no está disponible. Conecte el almacenamiento en Vercel para guardar los resultados.</p>`;
+    contenedor.innerHTML = `<p class="vacio">El escalafón no está disponible. Conecte el almacenamiento en Vercel para guardar los resultados.</p>`;
     return;
   }
 
@@ -841,7 +924,7 @@ async function pintarRanking() {
 /* ── Arranque ────────────────────────────────────────────── */
 
 $("#btn-iniciar").onclick = iniciar;
-$("#nombre").addEventListener("keydown", e => {
+$("#nombre").addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;
   // Sin esto la pulsación sigue viva cuando ya cambió la pantalla y activa
   // el elemento que acaba de recibir el foco: la cinemática se saltaba sola.
