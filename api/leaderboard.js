@@ -1,8 +1,19 @@
 import { timingSafeEqual } from "node:crypto";
 
 const CLAVE = "dilema:escalafon";
+// Conteo de respuestas del curso, para el desglose comparativo. Un solo
+// hash con campos «F01:2» —caso e índice de opción antes de barajar— en
+// vez de una clave por caso: son ~150 campos, caben de sobra en una
+// lectura, y se borran de un golpe cuando se reinicia el escalafón.
+const CLAVE_RESPUESTAS = "dilema:respuestas";
 const PUNTAJE_MAXIMO = 19;
 const TOPE = 10;
+
+// Un caso sin responder también cuenta: que el 20 % del curso dejara
+// vencer el reloj es justamente lo que vale la pena discutir.
+const SIN_RESPONDER = "t";
+const ID_CASO = /^[FMD]\d{2}$/;
+const MAX_OPCIONES = 5;
 
 // El score compuesto deja que Redis ordene por puntos y desempate por
 // tiempo en una sola operación: más puntos sube, más segundos baja.
@@ -64,6 +75,7 @@ async function redis() {
 // Sin credenciales y fuera de Vercel, el escalafón vive en memoria: se
 // pierde al reiniciar el servidor, pero permite probar el flujo completo.
 const memoria = [];
+const memoriaRespuestas = new Map();
 
 export default async function handler(req, res) {
   try {
@@ -81,7 +93,7 @@ export default async function handler(req, res) {
       });
     }
     if (req.method === "POST") return await guardar(req, res);
-    if (req.method === "GET") return await consultar(res);
+    if (req.method === "GET") return await consultar(req, res);
     if (req.method === "DELETE") return await reiniciar(req, res);
     res.setHeader("Allow", "GET, POST, DELETE");
     return res.status(405).json({ error: "Método no permitido" });
@@ -98,7 +110,7 @@ export default async function handler(req, res) {
 }
 
 async function guardar(req, res) {
-  const { nombre, puntos, segundos } = req.body ?? {};
+  const { nombre, puntos, segundos, respuestas } = req.body ?? {};
 
   if (typeof nombre !== "string" || nombre.trim().length < 2) {
     return res.status(400).json({ error: "El nombre del candidato es obligatorio" });
@@ -117,17 +129,94 @@ async function guardar(req, res) {
     fecha: Date.now()
   };
 
+  const votos = depurarRespuestas(respuestas);
+
   if (hayRedis) {
     const db = await redis();
-    await db.zadd(CLAVE, { score: componer(fila.puntos, fila.segundos), member: JSON.stringify(fila) });
+    // Una sola ida y vuelta para el puntaje y los seis conteos: en una
+    // función serverless cada round trip a Upstash se paga en latencia.
+    const tuberia = db.pipeline();
+    tuberia.zadd(CLAVE, { score: componer(fila.puntos, fila.segundos), member: JSON.stringify(fila) });
+    for (const voto of votos) tuberia.hincrby(CLAVE_RESPUESTAS, voto, 1);
+    await tuberia.exec();
   } else {
     memoria.push(fila);
+    for (const voto of votos) {
+      memoriaRespuestas.set(voto, (memoriaRespuestas.get(voto) ?? 0) + 1);
+    }
   }
 
-  return res.status(201).json({ ok: true });
+  // El conteo vuelve en la misma respuesta del POST: el desglose lo
+  // necesita de inmediato y así se evita una segunda consulta. Ya incluye
+  // el voto que se acaba de registrar, que es lo que hace que el candidato
+  // se vea dentro de la estadística y no al lado de ella.
+  const casos = votos.map(voto => voto.split(":")[0]);
+  return res.status(201).json({
+    ok: true,
+    estadisticas: casos.length ? await conteos(casos) : {},
+    total: await cuantos()
+  });
 }
 
-async function consultar(res) {
+// Lo que llega del navegador se reduce a campos «F01:2» y se descarta todo
+// lo demás: el endpoint es público y el conteo es lo único del juego que un
+// tercero podría inflar sin dejar rastro en el escalafón.
+function depurarRespuestas(lista) {
+  if (!Array.isArray(lista)) return [];
+
+  const campos = [];
+  const vistos = new Set();
+
+  for (const item of lista.slice(0, 20)) {
+    const id = item?.id;
+    // Un caso repetido no suma dos veces: una partida vota una sola vez
+    // por caso, y sin esta guarda bastaría con duplicar el arreglo.
+    if (typeof id !== "string" || !ID_CASO.test(id) || vistos.has(id)) continue;
+
+    const opcion = item?.opcion;
+    const nulo = opcion === null || opcion === undefined;
+    if (!nulo && (!Number.isInteger(opcion) || opcion < 0 || opcion >= MAX_OPCIONES)) {
+      continue;
+    }
+
+    vistos.add(id);
+    campos.push(`${id}:${nulo ? SIN_RESPONDER : opcion}`);
+  }
+
+  return campos;
+}
+
+// Devuelve { "F01": { "0": 12, "2": 3, "t": 1 }, ... } para los casos
+// pedidos. Se lee el hash entero —son ~150 campos— porque un HGETALL sale
+// más barato que seis HMGET encadenados.
+async function conteos(casos) {
+  const pedidos = new Set(casos);
+  let crudo;
+
+  if (hayRedis) {
+    const db = await redis();
+    crudo = Object.entries((await db.hgetall(CLAVE_RESPUESTAS)) ?? {});
+  } else {
+    crudo = [...memoriaRespuestas.entries()];
+  }
+
+  const salida = {};
+  for (const [campo, valor] of crudo) {
+    const corte = campo.lastIndexOf(":");
+    const id = campo.slice(0, corte);
+    if (!pedidos.has(id)) continue;
+    (salida[id] ??= {})[campo.slice(corte + 1)] = Number(valor) || 0;
+  }
+  return salida;
+}
+
+async function cuantos() {
+  if (!hayRedis) return memoria.length;
+  const db = await redis();
+  return await db.zcard(CLAVE);
+}
+
+async function consultar(req, res) {
   let filas;
 
   if (hayRedis) {
@@ -141,6 +230,15 @@ async function consultar(res) {
   }
 
   res.setHeader("Cache-Control", "no-store");
+
+  // La pantalla de sala necesita además cuántos han jugado en total: el
+  // tope son diez filas y «10 candidatos» diría poco en un salón de
+  // cuarenta. Va tras un parámetro para no cambiarle la forma a la
+  // respuesta que ya consumen las demás pantallas.
+  if (req.query?.datos === "sala") {
+    return res.status(200).json({ filas, total: await cuantos() });
+  }
+
   return res.status(200).json(filas);
 }
 
@@ -205,14 +303,17 @@ async function reiniciar(req, res) {
     return res.status(401).json({ error: "PIN incorrecto" });
   }
 
+  // El conteo de respuestas se va con el escalafón: si sobreviviera, el
+  // grupo siguiente vería el desglose comparado contra el grupo anterior.
   let borrados;
   if (hayRedis) {
     const db = await redis();
     borrados = await db.zcard(CLAVE);
-    await db.del(CLAVE);
+    await db.del(CLAVE, CLAVE_RESPUESTAS);
   } else {
     borrados = memoria.length;
     memoria.length = 0;
+    memoriaRespuestas.clear();
   }
 
   await limpiarFallos(ip);

@@ -285,6 +285,34 @@
           </button>
         </div>
       </section>
+
+      <!-- ── Sala ──────────────────────────────────────────── -->
+      <!-- Vista para proyectar, en ?modo=sala. No es una pantalla del
+       juego: no se llega a ella desde ningún botón y no lleva a ninguna
+       parte. Se refresca sola mientras el salón juega desde el celular. -->
+      <section class="pantalla" data-pantalla="sala">
+        <div class="marco marco--sala">
+          <div class="sala-cabecera">
+            <div>
+              <p class="expediente">Evaluación en curso</p>
+              <h2 class="titulo-sala" id="foco-sala" tabindex="-1">
+                Escalafón en vivo
+              </h2>
+            </div>
+
+            <div class="sala-ingreso">
+              <p class="sala-ingreso-rotulo">Para presentarse, entre desde su celular a</p>
+              <p class="sala-direccion" id="sala-direccion"></p>
+            </div>
+          </div>
+
+          <div id="contenedor-sala">
+            <p class="cargando">Conectando con el escalafón&hellip;</p>
+          </div>
+
+          <p class="sala-pie" id="sala-pie" hidden></p>
+        </div>
+      </section>
     </main>
 
     <!-- Aviso momentáneo entre pantallas: fin de tiempo, fin de casos. -->

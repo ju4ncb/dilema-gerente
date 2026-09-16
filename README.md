@@ -28,6 +28,64 @@ partida, así que nadie puede memorizar posiciones.
 El cronómetro corre solo durante los casos: se detiene mientras se reproducen
 los videos, para que el ranking mida decisiones y no lo que tarda un video.
 
+## Cómo respondió el curso
+
+En el desglose, debajo de cada caso, aparece **cómo respondió el resto del
+curso**: una barra por opción con el porcentaje que la eligió, marcada la
+que usted escogió y la que valía más. Es la pieza que convierte el desglose
+en material de discusión. Ver el propio puntaje dice poco; ver que media
+clase eligió la opción de 2 puntos —«hacer lo correcto de forma
+incompleta»— es la conversación que vale la pena tener.
+
+Las opciones se listan en el orden del banco, **no** en el barajado de esta
+partida: así la misma opción ocupa el mismo renglón en todas las pantallas
+del salón y se puede señalar «la segunda» frente al grupo. Los casos que se
+dejaron vencer también cuentan, con su propio renglón.
+
+El conteo viaja con el puntaje: el `POST` del escalafón lleva además qué
+opción se eligió en cada caso, y devuelve los totales ya con ese voto
+sumado. El dictamen se pinta de inmediato y el bloque del curso aparece un
+instante después, cuando llega la respuesta. Si el escalafón no está
+conectado, el desglose funciona igual, sin esa parte.
+
+**Por debajo de cuatro evaluaciones el bloque no se muestra.** Un porcentaje
+sobre dos personas no es un dato, y con muy pocos jugadores delataría quién
+eligió qué. El umbral está en `CONFIG.minimoMuestra`, en `app.js`.
+
+Los conteos viven en el hash `dilema:respuestas`, con campos `F01:2` —caso e
+índice de la opción antes de barajar—. **Se borran junto con el escalafón**:
+si sobrevivieran, el grupo siguiente vería el desglose comparado contra el
+grupo anterior.
+
+## La pantalla de sala
+
+`?modo=sala` abre una vista aparte, pensada para el proyector:
+
+```
+https://SU-PROYECTO.vercel.app/?modo=sala
+```
+
+El escalafón en grande, refrescándose solo cada cinco segundos, con la
+dirección para entrar desde el celular arriba a la derecha y el total de
+evaluaciones al pie. Los estudiantes juegan desde el teléfono y ven su
+nombre subir en la pared.
+
+- Lo que acaba de entrar **destella y se desliza**: en un escalafón que se
+  repinta cada cinco segundos, un puntaje nuevo pasaría inadvertido.
+- Cuando **cambia quién va de primero** cae confeti. Es el único momento del
+  escalafón que merece que el salón levante la vista.
+- La dirección que se proyecta **no lleva el `?modo=sala`**. Si lo llevara,
+  cada teléfono que la copiara abriría otra pantalla de sala en vez del
+  juego.
+- Si un refresco falla se deja en pantalla lo último que sí llegó, en vez de
+  parpadear a un error. El siguiente intento lo corrige solo.
+- Con la pestaña en segundo plano se suspende el refresco y se retoma al
+  volver, para no acumular peticiones que nadie está mirando.
+
+No es una pantalla del juego: no se llega a ella desde ningún botón y no
+lleva a ninguna parte. Conviene abrirla en un equipo aparte —el del
+proyector— y dejarla quieta. El intervalo está en `CONFIG.refrescoSala`.
+
 ## El tiempo
 
 Hay dos relojes a la vista, y miden cosas distintas.
@@ -74,7 +132,7 @@ El reloj del caso tampoco corre: arranca cuando el caso ya está pintado.
 ## Estructura
 
 ```
-index.html            Las cinco pantallas del juego
+index.html            Las cinco pantallas del juego, más la de sala
 styles.css            Identidad visual
 app.js                Máquina de estados, selección aleatoria, cronómetro
 preguntas.json        Banco de 30 casos
@@ -316,11 +374,28 @@ Cloudinary o Vercel Blob y ponga las URL completas en `CONFIG.videos`.
   *Continuar* siempre está disponible por si un video falla.
 - Vale la pena abrir el desglose caso por caso frente al grupo: en los casos
   de dificultad media, la opción de 2 puntos casi siempre es "hacer lo
-  correcto de forma incompleta", y ahí está la discusión interesante.
+  correcto de forma incompleta", y ahí está la discusión interesante. Con el
+  bloque de "cómo respondió el curso" ya no hay que preguntar quién eligió
+  qué: está en la barra.
+- Deje la pantalla de sala (`?modo=sala`) proyectada durante toda la
+  dinámica, en un equipo aparte. Es lo que convierte la actividad en un
+  evento en vez de una tarea.
 
 ## Editar los casos
 
-Todo el contenido vive en `preguntas.json`. Para agregar un caso, respete la
+Todo el contenido vive en `preguntas.json`. **El `id` de cada caso dejó de
+ser decorativo**: es la llave con la que se cuenta cómo respondió el curso.
+Tiene que ser único y respetar la forma `F01`, `M07`, `D03` —una letra de
+nivel y dos dígitos—, que es lo que valida el servidor. Un id con otra forma
+no rompe nada, pero sus respuestas no se cuentan y ese caso se queda sin el
+bloque comparativo.
+
+El orden de las opciones dentro del JSON también pasó a importar: es el
+orden en que se listan en ese bloque. Reordenarlas en un caso que ya tiene
+votos mezcla los conteos viejos con los nuevos, así que conviene reiniciar
+el escalafón después de tocarlas.
+
+Para agregar un caso, respete la
 estructura de puntajes de su nivel: fáciles y medios llevan cuatro opciones
 con 0, 1, 2 y 3 puntos; los difíciles llevan cinco con 0, 0, 0, 3 y 4. Si
 cambia la cantidad de casos por fase, ajuste `CONFIG.estructura`,

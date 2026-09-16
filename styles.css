@@ -1040,6 +1040,119 @@ body[data-vista="video"] #escenario {
   margin-top: 0.5rem;
 }
 
+/* ── Cómo respondió el curso ───────────────────────────── */
+
+/* Va sangrado y sobre fondo propio para que se lea como un apartado del
+   caso y no como una continuación del dictamen personal: lo de arriba es
+   sobre usted, esto es sobre el salón. */
+.curso {
+  margin-top: 0.9rem;
+  padding: 0.75rem 0.85rem;
+  background: rgba(10, 19, 30, 0.5);
+  border: 1px solid var(--borde);
+}
+
+.curso-rotulo {
+  color: var(--tenue);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-bottom: 0.6rem;
+}
+
+.curso-lista {
+  list-style: none;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.curso-texto {
+  color: var(--tenue);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.curso-fila.suya .curso-texto,
+.curso-fila.mejor .curso-texto {
+  color: var(--texto);
+}
+
+.curso-fila.vencida .curso-texto {
+  font-style: italic;
+}
+
+/* La etiqueta va dentro del párrafo para que fluya con la última línea del
+   texto en vez de abrir un renglón propio en cada opción marcada. */
+.curso-marca {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  vertical-align: 0.05em;
+  white-space: nowrap;
+}
+
+.curso-fila.suya .curso-marca {
+  color: var(--laton);
+}
+.curso-fila.mejor .curso-marca {
+  color: var(--aprobado);
+}
+/* Cuando la suya ES la mejor manda la etiqueta de «su respuesta», que es
+   la que el lector busca; el borde verde de la barra ya dice lo otro. */
+.curso-fila.suya.mejor .curso-marca {
+  color: var(--laton);
+}
+
+.curso-medida {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.6rem;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+.curso-medidor {
+  height: 6px;
+  background: var(--borde);
+}
+
+.curso-medidor i {
+  display: block;
+  height: 100%;
+  /* Un mínimo visible: sin esto, una opción con un solo voto en un curso
+     grande se dibuja como cero y parece que nadie la eligió. */
+  min-width: 2px;
+  background: var(--borde-control);
+}
+
+.curso-fila.mejor .curso-medidor i {
+  background: var(--aprobado);
+}
+.curso-fila.suya .curso-medidor i {
+  background: var(--laton);
+}
+.curso-fila.vencida .curso-medidor i {
+  background: var(--reprobado);
+}
+
+.curso-cifra {
+  color: var(--tenue);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.curso-fila.suya .curso-cifra {
+  color: var(--laton);
+  font-weight: 600;
+}
+
 /* ── Escalafón ─────────────────────────────────────────── */
 
 /* Lista y no tabla: en un celular cuatro columnas obligan a desplazar en
@@ -1302,6 +1415,135 @@ body[data-vista="video"] #escenario {
   }
 }
 
+/* ── Pantalla de sala ──────────────────────────────────── */
+
+/* Todo aquí se mide contra una regla distinta a la del resto del juego: no
+   se lee a treinta centímetros en un celular, sino a diez metros desde la
+   última fila. De ahí el ancho, los tamaños en vw y el contraste subido. */
+.marco--sala {
+  max-width: 68rem;
+  --pad-x: 2rem;
+  --pad-y: 2rem;
+}
+
+.pantalla[data-pantalla="sala"] .expediente {
+  font-size: 0.8rem;
+}
+
+.sala-cabecera {
+  display: grid;
+  gap: 1.25rem;
+  align-items: end;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--borde);
+}
+
+.titulo-sala {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+}
+
+.titulo-sala:focus-visible {
+  outline: 2px solid var(--laton);
+  outline-offset: 4px;
+}
+
+.sala-ingreso-rotulo {
+  color: var(--tenue);
+  font-size: 0.85rem;
+}
+
+/* La dirección es media instrucción de uso: si no se lee desde el fondo
+   del salón, la pantalla de sala no sirve para lo que se puso. */
+.sala-direccion {
+  color: var(--laton);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.3rem, 3vw, 2.1rem);
+  line-height: 1.15;
+  word-break: break-all;
+}
+
+.sala-pie {
+  color: var(--tenue);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* El escalafón crece con la pantalla: las mismas filas del celular, leídas
+   desde lejos. `.escalafon` trae un margen inferior pensado para el botón
+   que va debajo en el ranking; aquí no hay botón. */
+.pantalla[data-pantalla="sala"] .escalafon {
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.pantalla[data-pantalla="sala"] .puesto {
+  grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+  gap: 1.2rem;
+  padding: 0.9rem 1.1rem;
+}
+
+.pantalla[data-pantalla="sala"] .puesto-num {
+  font-size: clamp(1.2rem, 2.2vw, 1.8rem);
+}
+
+.pantalla[data-pantalla="sala"] .puesto-nombre {
+  font-size: clamp(1.05rem, 2.2vw, 1.7rem);
+}
+
+.pantalla[data-pantalla="sala"] .medidor {
+  height: 7px;
+}
+
+.pantalla[data-pantalla="sala"] .puesto-marcas strong {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+.pantalla[data-pantalla="sala"] .puesto-marcas span {
+  font-size: 0.9rem;
+}
+
+/* Lo que acaba de entrar se anuncia solo. Sin esto, en un escalafón que se
+   repinta cada cinco segundos, un puntaje nuevo aparece sin que nadie note
+   que apareció. */
+.puesto.recien {
+  animation: entrar-puesto 1.6s ease-out;
+}
+
+/* El 100 % vuelve al fondo propio de `.puesto` y no a `transparent`: sin
+   `animation-fill-mode` el elemento recupera su estilo al terminar, y un
+   destino transparente hacía que la fila se aclarara y luego pegara un
+   salto de vuelta al color base. */
+@keyframes entrar-puesto {
+  0% {
+    transform: translateX(-1.5rem);
+    opacity: 0;
+    background: rgba(201, 162, 39, 0.35);
+  }
+  35% {
+    transform: none;
+    opacity: 1;
+  }
+  100% {
+    background: rgba(14, 27, 42, 0.55);
+  }
+}
+
+@media (min-width: 52rem) {
+  .sala-cabecera {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .sala-ingreso {
+    text-align: right;
+  }
+}
+
 /* ── Movimiento reducido ───────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1323,6 +1565,10 @@ body[data-vista="video"] #escenario {
   .destello,
   .destello-caja {
     animation: none;
+  }
+  .puesto.recien {
+    animation: none;
+    background: rgba(201, 162, 39, 0.12);
   }
   .destello-caja {
     transform: none;

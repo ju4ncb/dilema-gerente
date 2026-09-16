@@ -29,6 +29,13 @@ const CONFIG = {
   claveRegistro: "dilema:candidato",
   topeInicio: 5,
   topeRanking: 10,
+  topeSala: 10,
+  // Cada cuánto se refresca la pantalla de sala, en milisegundos.
+  refrescoSala: 5000,
+  // Por debajo de esta cantidad de evaluaciones no se muestra cómo
+  // respondió el curso: un porcentaje sobre dos personas no es un dato,
+  // y con muy pocos jugadores delataría quién eligió qué.
+  minimoMuestra: 4,
   // Uno de cada N casos muestra el perro fantasma en la esquina.
   probabilidadPerro: 25,
 };
@@ -69,6 +76,9 @@ const estado = {
   limiteCaso: 0,
   tickCaso: null,
   avisosDados: [],
+  // Conteo de respuestas del curso, por caso. Llega con la respuesta del
+  // POST del puntaje y puede no llegar nunca: el desglose funciona igual.
+  estadisticas: null,
   // Evita que un doble toque —o un clic que llega junto con el cero del
   // reloj— registre dos respuestas para el mismo caso.
   bloqueado: false,
@@ -343,7 +353,11 @@ function armarRonda(banco) {
     barajar(banco[nivel])
       .slice(0, cantidad)
       .forEach((caso) => {
-        ronda.push({ ...caso, nivel, opciones: barajar(caso.opciones) });
+        // El índice se fija ANTES de barajar: es lo que identifica a la
+        // opción en el conteo del curso, que tiene que ser el mismo para
+        // todos aunque cada partida vea las opciones en otro orden.
+        const opciones = caso.opciones.map((op, i) => ({ ...op, indice: i }));
+        ronda.push({ ...caso, nivel, opciones: barajar(opciones) });
       });
   }
   return ronda;
@@ -654,7 +668,7 @@ async function agotarTiempo() {
   const caso = estado.casos[estado.indice];
   document.querySelectorAll(".opcion").forEach((b) => (b.disabled = true));
 
-  registrar(caso, null, 0);
+  registrar(caso, null);
   // Este aviso ya hace de transición: no se le encima uno de ánimo.
   await aviso("¡Tiempo acabado!", "alerta");
   avanzar(0, { aliento: false });
@@ -680,19 +694,27 @@ function responder(indiceOpcion) {
   botones.forEach((b) => (b.disabled = true));
   botones[indiceOpcion].classList.add("elegida");
 
-  registrar(caso, elegida.texto, elegida.puntos);
+  registrar(caso, elegida);
   avanzar(320, { aliento: true, avisoFinal: "¡Preguntas realizadas!" });
 }
 
-function registrar(caso, textoElegido, puntos) {
+// `elegida` es la opción completa, o null si se venció el reloj. Se guarda
+// el índice además del texto porque es la llave del conteo del curso, y la
+// lista de opciones en su orden original —no el barajado de esta partida—
+// para que el desglose se lea igual en todas las pantallas del salón.
+function registrar(caso, elegida) {
   const mejor = caso.opciones.reduce((a, b) => (b.puntos > a.puntos ? b : a));
   estado.respuestas.push({
+    id: caso.id,
     pregunta: caso.pregunta,
     nivel: caso.nivel,
-    elegida: textoElegido,
-    puntos,
+    elegida: elegida?.texto ?? null,
+    opcion: elegida?.indice ?? null,
+    puntos: elegida?.puntos ?? 0,
     maximo: mejor.puntos,
+    mejorIndice: mejor.indice,
     mejor: mejor.texto,
+    opciones: [...caso.opciones].sort((a, b) => a.indice - b.indice),
   });
 }
 
@@ -802,23 +824,132 @@ function pintarDesglose() {
       li.appendChild(ideal);
     }
 
+    const curso = construirCurso(r);
+    if (curso) li.appendChild(curso);
+
     lista.appendChild(li);
   });
 }
 
+// Cómo respondió el resto del curso en este caso. Es la pieza que convierte
+// el desglose en material de discusión: ver que media clase eligió la
+// opción de 2 puntos —«hacer lo correcto de forma incompleta»— dice mucho
+// más que ver el propio puntaje.
+//
+// Devuelve null si el conteo no llegó o si la muestra es demasiado chica.
+function construirCurso(r) {
+  const conteo = estado.estadisticas?.[r.id];
+  if (!conteo) return null;
+
+  const total = Object.values(conteo).reduce((a, b) => a + b, 0);
+  if (total < CONFIG.minimoMuestra) return null;
+
+  const caja = document.createElement("div");
+  caja.className = "curso";
+
+  const rotulo = document.createElement("p");
+  rotulo.className = "curso-rotulo";
+  rotulo.textContent = `Cómo respondió el curso · ${total} evaluacion${total === 1 ? "" : "es"}`;
+  caja.appendChild(rotulo);
+
+  const lista = document.createElement("ul");
+  lista.className = "curso-lista";
+
+  // Se recorre en el orden original del banco, no en el barajado de esta
+  // partida: así la misma opción ocupa el mismo renglón en todas las
+  // pantallas y se puede señalar «la segunda» frente al grupo.
+  const filas = r.opciones.map((op) => ({
+    texto: op.texto,
+    votos: conteo[op.indice] ?? 0,
+    suya: op.indice === r.opcion,
+    mejor: op.indice === r.mejorIndice,
+  }));
+
+  const vencidos = conteo.t ?? 0;
+  if (vencidos > 0) {
+    filas.push({
+      texto: "Dejó vencer el reloj",
+      votos: vencidos,
+      suya: r.opcion === null,
+      mejor: false,
+      vencido: true,
+    });
+  }
+
+  filas.forEach((fila) => {
+    const li = document.createElement("li");
+    li.className = "curso-fila";
+    if (fila.suya) li.classList.add("suya");
+    if (fila.mejor) li.classList.add("mejor");
+    if (fila.vencido) li.classList.add("vencida");
+
+    const texto = document.createElement("p");
+    texto.className = "curso-texto";
+    texto.textContent = fila.texto;
+
+    if (fila.suya || fila.mejor) {
+      const marca = document.createElement("span");
+      marca.className = "curso-marca";
+      marca.textContent = fila.suya ? "su respuesta" : "mejor opción";
+      texto.appendChild(marca);
+    }
+
+    const medida = document.createElement("div");
+    medida.className = "curso-medida";
+
+    const porcentaje = Math.round((fila.votos / total) * 100);
+
+    const medidor = document.createElement("div");
+    medidor.className = "curso-medidor";
+    const relleno = document.createElement("i");
+    relleno.style.width = `${porcentaje}%`;
+    // El relleno lleva un ancho mínimo en píxeles para que un voto suelto
+    // en un curso grande no se dibuje como cero. Con cero votos de verdad
+    // ese mínimo mentiría, así que la barra se retira entera.
+    relleno.hidden = fila.votos === 0;
+    medidor.appendChild(relleno);
+
+    const cifra = document.createElement("span");
+    cifra.className = "curso-cifra";
+    cifra.textContent = `${porcentaje}%`;
+
+    medida.append(medidor, cifra);
+    li.append(texto, medida);
+    lista.appendChild(li);
+  });
+
+  caja.appendChild(lista);
+  return caja;
+}
+
 /* ── Escalafón ───────────────────────────────────────────── */
 
+// Además del puntaje viaja qué eligió en cada caso, que es lo que alimenta
+// el desglose comparativo. El conteo vuelve en la misma respuesta —ya con
+// este voto sumado— y el desglose se vuelve a pintar cuando llega: se
+// muestra completo de entrada y se enriquece un instante después, en vez de
+// hacer esperar el dictamen a que conteste el servidor.
 async function enviarPuntaje(puntos) {
   try {
-    await fetch(CONFIG.api, {
+    const respuesta = await fetch(CONFIG.api, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         nombre: estado.nombre,
         puntos,
         segundos: estado.segundos,
+        respuestas: estado.respuestas.map((r) => ({
+          id: r.id,
+          opcion: r.opcion,
+        })),
       }),
     });
+    if (!respuesta.ok) return;
+
+    const cuerpo = await respuesta.json();
+    if (!cuerpo?.estadisticas) return;
+    estado.estadisticas = cuerpo.estadisticas;
+    pintarDesglose();
   } catch {
     // Sin conexión al escalafón la evaluación sigue siendo válida.
   }
@@ -1011,6 +1142,113 @@ async function pintarRanking() {
   contenedor.appendChild(construirEscalafon(filas, CONFIG.topeRanking));
 }
 
+/* ── Pantalla de sala ────────────────────────────────────── */
+
+// `?modo=sala` abre una vista pensada para el proyector: el escalafón en
+// grande, refrescándose solo, mientras el salón juega desde el celular.
+// No es una pantalla del juego —no se llega desde ningún botón— y por eso
+// vive en su propia rama del arranque, sin tocar el recorrido normal.
+
+// Claves de las filas ya vistas, para distinguir lo que acaba de entrar.
+const salaVistos = new Set();
+const llaveFila = (fila) => `${fila.nombre}|${fila.fecha}`;
+let salaPrimero = null;
+let salaReloj = null;
+// Bandera propia y no `salaVistos.size`: si la sala se abre con el
+// escalafón vacío, el primer candidato en llegar SÍ debe entrar
+// destellando, y con el tamaño del conjunto se lo habría tratado como
+// parte de la carga inicial.
+let salaCargada = false;
+
+// La dirección para entrar desde el celular, sin el ?modo=sala que trajo
+// esta pantalla: si se proyectara con el parámetro, cada teléfono que lo
+// copiara abriría otra pantalla de sala en vez del juego.
+function direccionDeIngreso() {
+  const ruta = location.pathname.replace(/index\.html$/, "").replace(/\/$/, "");
+  return `${location.host}${ruta}`;
+}
+
+async function consultarSala() {
+  const respuesta = await fetch(`${CONFIG.api}?datos=sala`);
+  if (!respuesta.ok) throw new Error(respuesta.status);
+  return respuesta.json();
+}
+
+async function refrescarSala() {
+  const contenedor = $("#contenedor-sala");
+  const pie = $("#sala-pie");
+
+  let filas, total;
+  try {
+    ({ filas, total } = await consultarSala());
+  } catch {
+    // Se deja en pantalla lo último que sí llegó: en una proyección, un
+    // parpadeo a «error» por un refresco fallido es peor que un escalafón
+    // con cinco segundos de atraso. El siguiente intento lo corrige solo.
+    if (!salaCargada) {
+      contenedor.innerHTML = `<p class="vacio">El escalafón no está disponible. Conecte el almacenamiento en Vercel.</p>`;
+    }
+    return;
+  }
+
+  // La primera carga no anima nada: si lo hiciera, todo el escalafón
+  // existente entraría destellando como si acabara de suceder.
+  const primeraCarga = !salaCargada;
+  salaCargada = true;
+
+  if (!filas.length) {
+    contenedor.innerHTML = `<p class="vacio">Todavía no se ha presentado ningún candidato.</p>`;
+    pie.hidden = true;
+    return;
+  }
+
+  const lista = construirEscalafon(filas, CONFIG.topeSala);
+  contenedor.innerHTML = "";
+  contenedor.appendChild(lista);
+
+  filas.slice(0, CONFIG.topeSala).forEach((fila, i) => {
+    const llave = llaveFila(fila);
+    if (salaVistos.has(llave)) return;
+    salaVistos.add(llave);
+    if (!primeraCarga) lista.children[i]?.classList.add("recien");
+  });
+
+  // Confeti solo cuando cambia quién va de primero. Es el único momento
+  // del escalafón que merece que el salón levante la vista.
+  const lider = llaveFila(filas[0]);
+  if (!primeraCarga && lider !== salaPrimero) lanzarConfeti(lista.children[0]);
+  salaPrimero = lider;
+
+  pie.textContent = `${total} evaluación${total === 1 ? "" : "es"} registrada${total === 1 ? "" : "s"}`;
+  pie.hidden = false;
+}
+
+function arrancarSala() {
+  mostrar("sala", "#foco-sala");
+  $("#sala-direccion").textContent = direccionDeIngreso();
+
+  const latir = () => {
+    clearInterval(salaReloj);
+    salaReloj = setInterval(refrescarSala, CONFIG.refrescoSala);
+  };
+
+  refrescarSala();
+  latir();
+
+  // Con la pestaña en segundo plano el navegador estrangula los timers y
+  // se acumulan peticiones que nadie está mirando. Al volver se refresca
+  // de una para no mostrar un escalafón viejo mientras llega el siguiente.
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      clearInterval(salaReloj);
+      salaReloj = null;
+      return;
+    }
+    refrescarSala();
+    latir();
+  });
+}
+
 /* ── Arranque ────────────────────────────────────────────── */
 
 $("#btn-iniciar").onclick = iniciar;
@@ -1024,5 +1262,9 @@ $("#nombre").addEventListener("keydown", (e) => {
 $("#btn-ranking").onclick = pintarRanking;
 $("#btn-reiniciar").onclick = () => location.reload();
 
-mostrar("inicio");
-prepararInicio();
+if (new URLSearchParams(location.search).get("modo") === "sala") {
+  arrancarSala();
+} else {
+  mostrar("inicio");
+  prepararInicio();
+}
